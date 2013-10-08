@@ -1,0 +1,614 @@
+`r knitr::opts_chunk$set(cache=TRUE)`
+
+Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions
+==================================================================================
+
+This supplementary file documents the commands run to compare the expression
+levels of CAGE clusters in libraries made with different template-switching
+oligonucleotides.  It is also intended as a self-executable tutorial exemplifying
+how to make differential gene expression analysis with nanoCAGE in general.
+
+Table of contents
+-----------------
+
+ * [Data download and preparation](#data-prep)
+ * [Artifact cleaning and alignment of the reads](#artifact-cleaning-and-alignment)
+ * [Tag clustering](#clustering)
+ * [Annotation](#annotation)
+ * [Preparation for statistical analysis](#r-prep)
+ * [Differential representation analysis](#differential-expression)
+   * [LNA vs. RNA](#LNA-RNA)
+   * [RNA vs. DNA](#RNA-DNA)
+   * [DNA vs. LNA](#DNA-LNA)
+ * [Output of the results as tables](#make-tables)
+ * [Notes on the software](#notes-on-software)
+
+
+<a id="data-prep">Data download and preparation</a>
+---------------------------------------------------
+
+The following commands are run in a command-line terminal on Unix systems.
+
+The nanoCAGE library is named `NCms10010`.  To better re-use commands, this name is put
+in an environment variable.
+
+```{r export_library, engine="bash"}
+export LIBRARY=NCms10010
+```
+
+### Information and download
+
+The `NCms10010` library was made with total RNA from rat muscle.  It is
+comparing template-switching oligonucleotides that end in RNA (r), DNA (d) or
+LNA (l) bases.  The comparisons were multiplexed in triplicates.
+
+The data is a single-end MiSeq run (ID: `121012_M00528_0022_AMS2003997-00050`)
+of 4,682,200 reads.  The output files (`s_G1_L001_R1_001.fastq.gz` and
+`s_G1_L001_R1_002.fastq.gz` were decompressed, concatenated, and re-compressed
+with `xz`.  The resulting file is available for download from the supplementary
+material, and from RIKEN.  Deposition to DDBJ is in progress.
+
+```{r download_material, engine="bash", dependson='export_library'}
+wget http://genome.gsc.riken.jp/plessy-20130430/$LIBRARY.fastq.xz
+echo '47b797f36cd20d6548e80e09dc05daa1  NCms10010.fastq.xz' | md5sum -c
+```
+
+### De-multiplexing
+
+The barcodes and sample IDs are associated in a whitespace-delimited file
+called `NCms10010.id` containing the following.  The sample IDs encode the type
+of template-switching oligonucleotide used, which each letter representing the
+chemical nature of the third, second and first nucleotide, from the 3′ end.
+
+```{r create_ID_file, engine="bash"}
+cat <<__ID__ > $LIBRARY.id
+rrr_1	CACTGA
+rrr_2	GCTCTC
+rrr_3	TCGCGT
+ddd_1	ATCGTG
+ddd_2	CACGAT
+ddd_3	GTATAC
+ddl_1	ACAGAT
+ddl_2	CTGACG
+ddl_3	GAGTGA
+dll_1	AGTAGC
+dll_2	GCTGCA
+dll_3	TCGAGC
+lll_1	ATCATA
+lll_2	CGATGA
+lll_3	TATAGC
+__ID__
+```
+
+Samples were demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
+The number of extracted reads was collected in a file named `NCms10010.extracted.log`.
+
+```{r demultiplex, engine="bash", dependson=c('download_material','create_ID_file')}
+xzcat $LIBRARY.fastq.xz |
+  fastx_barcode_splitter.pl --bcfile $LIBRARY.id --prefix $LIBRARY. --suffix .fq --bol --exact |
+  sed 1d | cut -f1,2 |
+  perl -ne 'print "extracted\t$_"' |
+  grep -v -e unmatched -e total |
+  tee $LIBRARY.extracted.log
+```
+
+### Trimming reads to 31 nt
+
+The reads start with 6 bases of barcode, 8 bases of random fingerprint, 4 bases
+of spacer, and 3 base of linker, that are all removed in the following command.
+The reads were also trimmed in 3′ to ensure that the results were comparable
+with a reference HiSeq run (not covered in this document).
+
+```{r trim_reads, engine="bash", dependson='demultiplex'}
+for FASTQ in *.fq
+do
+  fastx_trimmer -f 22 -l 52 -Q33 < $FASTQ | sponge $FASTQ
+done
+```
+
+<a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
+------------------------------------------------------------------------------------------
+
+### Removal of artifacts with TagDust
+
+Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
+and install it in the user's path.
+
+```{r tagdust, engine="bash", dependson='trim_reads'}
+cat > tagdust.fa <<__TagDust__
+>TS (before barcode)
+TAGTCGAACTGAAGGTCTCCAGCA
+>RT (without random bases)
+TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
+>empty (TS linker + RT reverse-complemented)
+TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
+__TagDust__
+
+for ID in $( awk '{print $1}' $LIBRARY.id )
+do
+echo -ne "tagdust\t$ID\t"
+tagdust tagdust.fa N*.$ID.fq -o $LIBRARY.$ID.dusted.fastq 2>&1 |
+  grep -e rejected | cut -f1
+done | tee $LIBRARY.tagdust.log
+```
+
+### Alignment on the rat genome version 4
+
+The following assumes the genome downloaded and indexed for BWA in
+the current directory, using `rn4_male` as a base name.
+
+```{r align, engine="bash", dependson='tagdust'}
+GENOME=rn4_male
+for FQ in *dusted.fastq
+do
+  bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
+  bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
+    samtools view -uS - |
+    samtools sort - $(basename $FQ .dusted.fastq)
+done
+```
+
+### Filter reads aligning to rDNA with rRNAdust
+
+`rRNAdust` is available in the supplementary material at <http://genome.gsc.riken.jp/plessy-20130430/rRNAdust_1.02.tar.gz>.
+
+Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
+
+```{r rrnadust, engine="bash", dependson='align'}
+for ID in $( awk '{print $1}' $LIBRARY.id )
+do
+  echo -ne "rdna\t$ID\t"
+  (rRNAdust -t8 rat_rDNA.fa $LIBRARY.$ID.bam | samtools view -bS  - 2> /dev/null | sponge $LIBRARY.$ID.bam) 2>&1 | sed 's/Excluded: //'
+done | tee $LIBRARY.rdna.log
+```
+
+### Alignment statistics
+
+```{r align_stats, engine="bash", dependson='rrnadust'}
+for ID in $( awk '{print $1}' $LIBRARY.id )
+do
+  echo -ne "mapped\t$ID\t"
+  (samtools flagstat $LIBRARY.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee $LIBRARY.mapped.log
+```
+
+### Filter out possible strand-invasion tags
+
+Strand invasion was described in [Tang et al, Nucl. Acids Res. (2013) 41
+(3):e44](http://nar.oxfordjournals.org/content/41/3/e44), and is more frequent
+in LNA- or DNA-based template-switching oligonucleotides.
+
+The following commands need an updated version of the `find_strand_invasion.pl`
+that was in Tang et al's supplementary material, where a new `-f` option is
+added, with the same semantics as in `samtools`.  It is available at
+<https://github.com/davetang/23180801>.
+
+
+```{r strand_invasion, engine="bash", dependson='rrnadust'}
+ERRORS=2
+for BAM in $LIBRARY.???_?.bam
+do
+  find_strand_invasion.pl -f $BAM -g rn4_male.fa -e $ERRORS -s TATA
+done
+for ID in $( awk '{print $1}' $LIBRARY.id )
+do
+  echo -ne "strand-invasion-$ERRORS\t$ID\t"
+  (samtools flagstat ${LIBRARY}.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee $LIBRARY.strand-invasion-$ERRORS.log
+```
+
+<a name="clustering">Tag clustering</a>
+---------------------------------------
+
+Level 1 clusters are single-nucleotide resolution data representing the 5′ ends
+of the CAGE tags.  Level 2 clusters are groups of level 1 clusters that are
+separated by 20 or less nucleotides.
+
+The `level1.py` and `level2.py` scripts implement tag clustering like in the
+[FANTOM3](http://fantom.gsc.riken.jp/3/) and
+[FANTOM4](http://fantom.gsc.riken.jp/4/) projects, and are available at
+<http://genome.gsc.riken.jp/plessy-20130430/PromoterPipeline_20130430.tar.gz>.
+
+They output their results in Order Switchable Column
+([OSC](http://sourceforge.net/projects/osctf/)) format, where each line is a
+cluster, and each library gives one column counting the tags in the clusters,
+and another column where the counts are normalised in parts per million.
+
+See also [Carninci et al., Nature Genetics 38
+626-635 (2006)](http://www.nature.com/ng/journal/v38/n6/full/ng1789.html) and
+[Suzuki et al., Nature Genetics 41 553-562
+(2009)](http://www.nature.com/ng/journal/v41/n5/full/ng.375.html) for original
+examples of CAGE tag clustering.
+
+```{r tag_clustering, engine="bash", dependson='strand_invasion'}
+level1.py -o $LIBRARY.l1.osc.gz -F 516 \
+  NCms10010.???_?.bam \
+  NCms10010.???_?_nw_?_??????_filtered_sorted.bam
+
+level2.py -o $LIBRARY.l2.osc -t 0 $LIBRARY.l1.osc.gz
+gzip $LIBRARY.l2.osc
+```
+
+The resulting file NCms10010.l1.osc.gz can be loaded in the
+[Zenbu](http://fantom.gsc.riken.jp/zenbu/) system to browse the alignments on
+the rat genome.
+
+<a name="annotation">Annotation</a>
+-----------------------------------
+
+### Preparation of the reference files.
+
+Data from ENSEMBL 69 were retrieved via
+[BioMart](http://oct2012.archive.ensembl.org/biomart/martview/), with the following XML query.
+Note that `external_gene_id` is called _Associated Gene Name_ in the web
+interface.
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Query>
+<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "0" count = "" datasetConfigVersion = "0.6" >
+			
+	<Dataset name = "rnorvegicus_gene_ensembl" interface = "default" >
+		<Attribute name = "ensembl_gene_id" />
+		<Attribute name = "ensembl_transcript_id" />
+		<Attribute name = "chromosome_name" />
+		<Attribute name = "strand" />
+		<Attribute name = "external_gene_id" />
+		<Attribute name = "transcript_start" />
+		<Attribute name = "transcript_end" />
+		<Attribute name = "gene_biotype" />
+		<Attribute name = "exon_chrom_start" />
+		<Attribute name = "exon_chrom_end" />
+	</Dataset>
+</Query>
+```
+
+Convert coordinates to gene names
+
+```{r convert_biomart, engine="bash"}
+cat mart_export.txt | 
+  sed -e 1d -e 's|\t\t|\tno_symbol\t|'           |
+  awk '{OFS="\t"} {print $3, $6, $7, $5, 0, $4}' |
+  grep -v ^[JA]                                  |
+  uniq                                           |
+  sed -e 's/-1$/-/'                              \
+      -e 's/1$/+/'                               \
+      -e 's/^/chr/'                              |
+  sort -k1,1 -k2,2n                              \
+  > rn4_male.symbols.bed
+
+
+### Gene symbols
+
+```{r gene_symbols, engine="bash", dependson='convert_biomart'}
+zcat $LIBRARY.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l1.bed
+zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
+zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
+
+bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.symbols.bed -s -loj |
+  awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' | 
+  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.genes
+```
+
+### Repeated elements
+
+Download the repeatmasker track from the [UCSC genome browser](http://genome.ucsc.edu) and save it in a file called `rn4_male.repeatmasker.bed`.
+
+```{r intersect_rmsk, engine="bash"}
+bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
+  awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' |
+  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.rmsk
+```
+
+<a name="r-prep">Preparation for statistical analysis</a>
+---------------------------------------------------------
+
+The following commands are run in the [`R` package for statistical computing](http://www.r-project.org/).
+
+### Load the data.
+
+The oscR library is available at <https://github.com/charles-plessy/oscR>.
+
+The following commands load the level 1 and 2 clusters into data frames where
+the column names correspond to the sample IDs defined above.
+
+```{r load_data, dependson='tag_clustering'}
+LIBRARY <- system("echo $LIBRARY", intern=TRUE)
+
+library(oscR)
+
+l1 <- read.osc(paste(LIBRARY,'l1','osc', 'gz',sep='.'), drop.coord=T, drop.norm=T)
+l2 <- read.osc(paste(LIBRARY,'l2','osc', 'gz',sep='.'), drop.coord=T, drop.norm=T)
+
+colnames(l1) <- sub('raw.NCms1.....','',colnames(l1))
+colnames(l2) <- sub('raw.NCms1.....','',colnames(l2))
+
+colnames(l1) <- sub('_......_filtered_sorted', '', colnames(l1))
+colnames(l2) <- sub('_......_filtered_sorted', '', colnames(l2))
+```
+
+### Organise the data.
+
+The following commands defined convenient shortcuts to manipulates groups of
+libraries. The presence of `nw_2` in the names indicate that strand-invasion
+artifacts have been removed.
+
+```{r define_aliases}
+ddd <- c('ddd_1', 'ddd_2', 'ddd_3')
+ddl <- c('ddl_1', 'ddl_2', 'ddl_3')
+dll <- c('dll_1', 'dll_2', 'dll_3')
+lll <- c('lll_1', 'lll_2', 'lll_3')
+rrr <- c('rrr_1', 'rrr_2', 'rrr_3')
+all <- c(rrr, lll, dll, ddl, ddd)
+
+ddd_nw_2 <- c('ddd_1_nw_2', 'ddd_2_nw_2', 'ddd_3_nw_2')
+ddl_nw_2 <- c('ddl_1_nw_2', 'ddl_2_nw_2', 'ddl_3_nw_2')
+dll_nw_2 <- c('dll_1_nw_2', 'dll_2_nw_2', 'dll_3_nw_2')
+lll_nw_2 <- c('lll_1_nw_2', 'lll_2_nw_2', 'lll_3_nw_2')
+rrr_nw_2 <- c('rrr_1_nw_2', 'rrr_2_nw_2', 'rrr_3_nw_2')
+all_nw_2 <- c(rrr_nw_2, lll_nw_2, dll_nw_2, ddl_nw_2, ddd_nw_2)
+```
+
+```{r calculate_means_and_SDs, dependson='load_data'}
+TPM <- function(clusters){
+  clusters.tpm <- data.frame(prop.table(as.matrix(clusters),2) * 1000000)
+  colnames(clusters.tpm) <- colnames(clusters)
+  return(clusters.tpm)
+}
+
+L2 <- TPM(l2)
+
+L2.means <- data.frame(
+  ddd = apply(L2[,ddd],1,mean),
+  ddl = apply(L2[,ddl],1,mean),
+  dll = apply(L2[,dll],1,mean),
+  lll = apply(L2[,lll],1,mean),
+  rrr = apply(L2[,rrr],1,mean) )
+
+L2.means_nw_2 <- data.frame(
+  ddd = apply(L2[,ddd_nw_2],1,mean),
+  ddl = apply(L2[,ddl_nw_2],1,mean),
+  dll = apply(L2[,dll_nw_2],1,mean),
+  lll = apply(L2[,lll_nw_2],1,mean),
+  rrr = apply(L2[,rrr_nw_2],1,mean) )
+
+L2.sd <- data.frame(
+  ddd = apply(L2[,ddd],1,sd),
+  ddl = apply(L2[,ddl],1,sd),
+  dll = apply(L2[,dll],1,sd),
+  lll = apply(L2[,lll],1,sd),
+  rrr = apply(L2[,rrr],1,sd) )
+```
+
+### Annotation of the results
+
+```{r load_gene_symbols, dependson=c('gene_symbols','intersect_rmsk')}
+genesymbols <- read.table(paste(LIBRARY,'l2','genes',sep='.'), col.names=c("cluster","symbol"))
+rownames(genesymbols) <- genesymbols$cluster
+genesymbols$rmsk <- read.table(paste(LIBRARY,'l2','rmsk',sep='.'), col.names=c("cluster","rmsk"))[,'rmsk']
+```
+
+<a name="differential-expression">Differential representation analysis<a>
+-------------------------------------------------------------------------
+
+Statistical comparisons using [edgeR](http://www.bioconductor.org/packages/release/bioc/html/edgeR.html).
+
+```{r load_edgeR, message=FALSE, dependson='load_data'}
+library(edgeR)
+```
+
+The following plots represent:
+
+ * the multidimensional scaling of the samples,
+   where spatial separation between the two sets of triplicates indicates that the
+   factor that is compared (type of template-switching oligonucleotide) introduces
+   more differences that the simple technical fluctuations,
+
+ * the expression levels of the CAGE clusters as a M-A plot, where dots in red are clusters
+   significantly enriched in one type of libraries.  Vertical distance from the
+   horizontal midline represent the amplitude of the differences, and distance on
+   the horizontal axis represents the average strength of expression.
+
+The following comparisons show the difference (or lack of it) between
+non-filtered and filtered data, and then explore the filtered data in more
+details.
+
+### <a name='LNA-RNA'>LNA vs. RNA</a>
+
+```{r LNA_vs_RNA, dev='png'}
+x     <- DGEList(counts=l2[,c(lll,rrr)], group=c(rep('lll',3),rep('rrr',3)), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+lr <- x
+lr.com <- x.com
+plotMDS(lr)
+plotSmear(lr.com, de.tags=rownames(lr.com)[decideTestsDGE(lr.com) != 0], cex=0.8, main='LNA / RNA', ylab="LNA (bottom) / RNA (top)")
+
+x     <- DGEList(counts=l2[,c(lll_nw_2,rrr_nw_2)], group=c(rep('lll_nw_2',3),rep('rrr_nw_2',3)), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+lr_nw_2 <- x
+lr_nw_2.com <- x.com
+plotMDS(lr_nw_2)
+plotSmear(lr_nw_2.com, de.tags=rownames(lr_nw_2.com)[decideTestsDGE(lr_nw_2.com) != 0], cex=0.8, main='LNA / RNA (filtered)', ylab="LNA (bottom) / RNA (top)")
+```
+
+```{r compare_LNA_RNA_numbers, results="hide"}
+lr_nw_2.up      <- sum(decideTestsDGE(lr_nw_2.com) > 0)
+lr_nw_2.down    <- sum(decideTestsDGE(lr_nw_2.com) < 0)
+```
+
+`r lr_nw_2.up` clusters were enriched and `r lr_nw_2.down` were depleted in RNA
+libraries compared to LNA.  The top 100 stronger fold changes in each direction are shown below.
+
+```{r compare_LNA_RNA, dependson=c('load_gene_symbols' ,'LNA_vs_RNA,'), echo=-1}
+options(width=150)
+# Summary of the top 100 clusters enriched in RNA libraries.
+summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+# Top 15 clusters enriched in RNA libraries.
+merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:15,], genesymbols[,-1], by=0, sort=FALSE)
+# Summary of the top 100 clusters enriched in LNA libraries.
+summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+```
+
+Positive fold change indicate enrichment in RNA libraries.  The 7SLRNA hits
+are concentrated at the top of the list.  LNA libraries are enriched for hits
+on CAGAGA repeats, even beyond the significance level (FDR) of the statistical
+comparison.
+
+```{r srprna, dependson='load_gene_symbols', dev='svg'}
+library(reshape)
+library(ggplot2)
+srprna <- rownames(subset(genesymbols, rmsk=="7SLRNA"))
+srprna.expression <- melt(L2[srprna, c(rrr_nw_2, ddd_nw_2, lll_nw_2)], measure.vars=c(rrr_nw_2, ddd_nw_2, lll_nw_2))
+for (group in c('ddd','lll','rrr')) srprna.expression[grep(group,srprna.expression$variable),'group'] <- group
+srprna.expression$group <- reorder(factor(srprna.expression$group), srprna.expression$value, function(x) sum(x) * -1)
+qplot(data=srprna.expression, value, reorder(variable, value, sum), xlab="Parts per million", ylab="Library", main="Expression levels of 7SL RNA genes", col=group)
+```
+
+The measured expression of 7SL RNA is strongest in RNA libraries, strong in DNA
+libraries, and weak in LNA libraries.
+
+### <a name='RNA-DNA'>RNA vs. DNA</a>
+
+```{r RNA_vs_DNA, dev='png'}
+x     <- DGEList(counts=l2[,c(rrr,ddd)], group=factor(c(rep("rrr", 3), rep("ddd", 3)), levels=c("rrr", "ddd")), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+rd <- x
+rd.com <- x.com
+plotMDS(x)
+plotSmear(rd.com, de.tags=rownames(rd.com)[decideTestsDGE(rd.com) != 0], cex=0.8, main='RNA / DNA', ylab="RNA (bottom) / LNA (top)")
+
+x     <- DGEList(counts=l2[,c(rrr_nw_2,ddd_nw_2)], group=factor(c(rep("rrr_nw_2", 3), rep("ddd_nw_2", 3)), levels=c("rrr_nw_2", "ddd_nw_2")), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+plotMDS(x)
+rd_nw_2 <- x
+rd_nw_2.com <- x.com
+plotSmear(rd_nw_2.com, de.tags=rownames(rd_nw_2.com)[decideTestsDGE(rd_nw_2.com) != 0], cex=0.8, main='RNA / DNA (filtered)', ylab="RNA (bottom) / DNA (top)")
+```
+
+```{r compare_RNA_DNA_numbers, echo=FALSE}
+rd_nw_2.up      <- sum(decideTestsDGE(rd_nw_2.com) > 0)
+rd_nw_2.down    <- sum(decideTestsDGE(rd_nw_2.com) < 0)
+```
+
+`r rd_nw_2.down` clusters were enriched and `r rd_nw_2.up` were depleted in RNA
+libraries compared to DNA.
+
+The majority of the clusters in the top 100 enriched in the RNA libraries did
+not overlap with repeat elements, and were overlapping with loci having gene
+symbols.  In contrast, the majority of the top 100 clusters enriched in the DNA
+libraries did not overlap with known genes.  A mild enrichment for GGGTG
+simple repeats is noted.
+
+```{r compare_RNA_DNA, dependson=c('load_gene_symbols' ,'RNA_vs_DNA,')}
+# Summary of the top 100 clusters enriched in DNA libraries.
+summary(merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+# Summary of the top 100 clusters enriched in RNA libraries.
+summary(merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+```
+
+### <a name='DNA-LNA'>DNA vs. LNA</a>
+
+
+```{r DNA_vs_LNA, dev='png'}
+x     <- DGEList(counts=l2[,c(ddd,lll)], group=c(rep('ddd',3),rep('lll',3)), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+dl <- x
+dl.com <- x.com
+plotMDS(x)
+plotSmear(dl.com, de.tags=rownames(dl.com)[decideTestsDGE(dl.com) != 0], cex=0.8, main='DNA / LNA', ylab="DNA (bottom) / LNA (top)")
+
+x     <- DGEList(counts=l2[,c(ddd_nw_2,lll_nw_2)], group=c(rep('ddd_nw_2',3),rep('lll_nw_2',3)), remove.zeros=TRUE)
+x     <- calcNormFactors(x)
+x     <- estimateCommonDisp(x)
+x     <- estimateTagwiseDisp(x)
+x.com <- exactTest(x)
+plotMDS(x)
+dl_nw_2 <- x
+dl_nw_2.com <- x.com
+plotSmear(dl_nw_2.com, de.tags=rownames(dl_nw_2.com)[decideTestsDGE(dl_nw_2.com) != 0], cex=0.8, main='DNA / LNA (filtered)', ylab="DNA (bottom) / LNA (top)")
+```
+
+```{r compare_DNA_LNA_numbers, echo=FALSE}
+dl_nw_2.up      <- sum(decideTestsDGE(dl_nw_2.com) > 0)
+dl_nw_2.down    <- sum(decideTestsDGE(dl_nw_2.com) < 0)
+```
+
+`r dl_nw_2.up` clusters were enriched and `r dl_nw_2.down` were depleted in LNA
+libraries compared to DNA.
+
+After filtering out strand-invasion artifacts, only few significant differences
+remain between the DNA and LNA libraries.  7SLRNA was also depleted in LNA
+libraries, and CAGAGA repeats were enriched.
+
+
+```{r compare_DNA_LNA, dependson=c('load_gene_symbols' ,'DNA_vs_LNA,')}
+summary(decideTestsDGE(dl_nw_2.com))
+summary(merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+summary(merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
+```
+
+```{r save_workspace, cache=FALSE}
+save.image('analysis.RData')
+```
+
+<a name="make-tables">Output of the results as tables</a>
+--------------------------------------------------------
+
+```{r make-tables, dependson=c('compare_LNA_RNA', 'compare_RNA_DNA', 'compare_DNA_LNA')}
+# One table per list of significantly over-represented clusters.
+write.csv(file='R-L.csv', merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+write.csv(file='L-R.csv', merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+write.csv(file='D-R.csv', merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+write.csv(file='R-D.csv', merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+write.csv(file='L-D.csv', merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+write.csv(file='D-L.csv', merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
+
+# One summary table combining all the results.
+l2[rownames(topTags(lr_nw_2.com, Inf)), "LR.logFC"] <- topTags(lr_nw_2.com, Inf)$table$logFC
+l2[rownames(topTags(lr_nw_2.com, Inf)), "LR.FDR"]   <- topTags(lr_nw_2.com, Inf)$table$FDR
+l2[rownames(topTags(rd_nw_2.com, Inf)), "RD.logFC"] <- topTags(rd_nw_2.com, Inf)$table$logFC
+l2[rownames(topTags(rd_nw_2.com, Inf)), "RD.FDR"]   <- topTags(rd_nw_2.com, Inf)$table$FDR
+l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.logFC"] <- topTags(dl_nw_2.com, Inf)$table$logFC
+l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.FDR"]   <- topTags(dl_nw_2.com, Inf)$table$FDR
+l2$symbol <- genesymbols$symbol
+l2$rmsk <- genesymbols$rmsk
+write.csv(file=paste(LIBRARY, "DGE", "csv", sep = "."), l2)
+```
+
+
+<a name="notes-on-software">Notes on the software</a>
+-----------------------------------------------------
+
+This analysis was done on a iMac with a i7 hyperthreaded quad-core CPU (2.93
+GHz) and 12 GiB of memory, running [Debian](http://www.debian.org) system, with
+the following packages installed.
+
+ - bedtools 2.17.0-1
+ - bwa 0.6.2-2
+ - fastx-toolkit 0.0.13.2-1
+ - moreutils 0.47 (for the `sponge` command)
+ - r-base (see below)
+ - r-bioc-edgeR (see below)
+ - samtools 0.1.19-1
+
+This tutorial was made with the [knitr](http://yihui.name/knitr/) library for
+`R`, that produces HTML pages from templates containing executable code.
+
+```{r session_info, cache=FALSE}
+sessionInfo()
+```
