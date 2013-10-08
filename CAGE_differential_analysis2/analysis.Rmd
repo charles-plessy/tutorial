@@ -1,12 +1,15 @@
 `r knitr::opts_chunk$set(cache=TRUE)`
 
-Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions
-==================================================================================
+Digital expression comparison between nanoCAGE libraries testing variant template-switching oligonucleotides
+============================================================================================================
 
-This supplementary file documents the commands run to compare the expression
-levels of CAGE clusters in libraries made with different template-switching
-oligonucleotides.  It is also intended as a self-executable tutorial exemplifying
-how to make differential gene expression analysis with nanoCAGE in general.
+This tutorial is an updated version of the supplementary material of the
+manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions_
+([Harbers et al., 2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that
+documented the commands run to compare the expression levels of CAGE clusters
+in libraries made with different template-switching oligonucleotides.
+
+It is intended as an example on how to compare shallow-sequenced nanoCAGE libraries.
 
 Table of contents
 -----------------
@@ -33,24 +36,24 @@ The nanoCAGE library is named `NCms10010`.  To better re-use commands, this name
 in an environment variable.
 
 ```{r export_library, engine="bash"}
-export LIBRARY=NCms10010
+export LIBRARY=DRR014141
 ```
 
 ### Information and download
 
-The `NCms10010` library was made with total RNA from rat muscle.  It is
-comparing template-switching oligonucleotides that end in RNA (r), DNA (d) or
-LNA (l) bases.  The comparisons were multiplexed in triplicates.
+The `DRR014141` library (`NCms10010` in the original publication)  was made
+with total RNA from rat muscle.  It is comparing template-switching
+oligonucleotides that end in RNA (r), DNA (d) or LNA (l) bases.  The
+comparisons were multiplexed in triplicates.
 
 The data is a single-end MiSeq run (ID: `121012_M00528_0022_AMS2003997-00050`)
-of 4,682,200 reads.  The output files (`s_G1_L001_R1_001.fastq.gz` and
-`s_G1_L001_R1_002.fastq.gz` were decompressed, concatenated, and re-compressed
-with `xz`.  The resulting file is available for download from the supplementary
-material, and from RIKEN.  Deposition to DDBJ is in progress.
+of 4,682,200 reads.  The following commands download (`wget`) the data from
+[DRA](http://trace.ddbj.nig.ac.jp/dra/index.html) (DDBJ's Sequence Read Archive)
+and test its integrity (`md5sum`).
 
 ```{r download_material, engine="bash", dependson='export_library'}
-wget http://genome.gsc.riken.jp/plessy-20130430/$LIBRARY.fastq.xz
-echo '47b797f36cd20d6548e80e09dc05daa1  NCms10010.fastq.xz' | md5sum -c
+wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
+echo "b0b3070fbbae0073507234d9048325ff  $LIBRARY.fastq.bz2" | md5sum -c
 ```
 
 ### De-multiplexing
