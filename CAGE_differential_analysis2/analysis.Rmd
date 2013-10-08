@@ -1,4 +1,7 @@
-`r knitr::opts_chunk$set(cache=TRUE)`
+```{r echo=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+options(width=150)
+```
 
 Digital expression comparison between nanoCAGE libraries testing variant template-switching oligonucleotides
 ============================================================================================================
@@ -30,15 +33,6 @@ Table of contents
 <a id="data-prep">Data download and preparation</a>
 ---------------------------------------------------
 
-The following commands are run in a command-line terminal on Unix systems.
-
-The nanoCAGE library is named `NCms10010`.  To better re-use commands, this name is put
-in an environment variable.
-
-```{r export_library, engine="bash"}
-export LIBRARY=DRR014141
-```
-
 ### Information and download
 
 The `DRR014141` library (`NCms10010` in the original publication)  was made
@@ -51,20 +45,20 @@ of 4,682,200 reads.  The following commands download (`wget`) the data from
 [DRA](http://trace.ddbj.nig.ac.jp/dra/index.html) (DDBJ's Sequence Read Archive)
 and test its integrity (`md5sum`).
 
-```{r download_material, engine="bash", dependson='export_library'}
+```{r download_material, engine="bash"}
 wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
-echo "b0b3070fbbae0073507234d9048325ff  $LIBRARY.fastq.bz2" | md5sum -c
+echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
 ```
 
 ### De-multiplexing
 
 The barcodes and sample IDs are associated in a whitespace-delimited file
-called `NCms10010.id` containing the following.  The sample IDs encode the type
+called `DRR014141.id` containing the following.  The sample IDs encode the type
 of template-switching oligonucleotide used, which each letter representing the
 chemical nature of the third, second and first nucleotide, from the 3′ end.
 
 ```{r create_ID_file, engine="bash"}
-cat <<__ID__ > $LIBRARY.id
+cat <<__ID__ > DRR014141.id
 rrr_1	CACTGA
 rrr_2	GCTCTC
 rrr_3	TCGCGT
@@ -84,15 +78,15 @@ __ID__
 ```
 
 Samples were demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-The number of extracted reads was collected in a file named `NCms10010.extracted.log`.
+The number of extracted reads was collected in a file named `DRR014141.extracted.log`.
 
 ```{r demultiplex, engine="bash", dependson=c('download_material','create_ID_file')}
-xzcat $LIBRARY.fastq.xz |
-  fastx_barcode_splitter.pl --bcfile $LIBRARY.id --prefix $LIBRARY. --suffix .fq --bol --exact |
+bzcat DRR014141.fastq.bz2 |
+  fastx_barcode_splitter.pl --bcfile DRR014141.id --prefix DRR014141. --suffix .fq --bol --exact |
   sed 1d | cut -f1,2 |
   perl -ne 'print "extracted\t$_"' |
   grep -v -e unmatched -e total |
-  tee $LIBRARY.extracted.log
+  tee DRR014141.extracted.log
 ```
 
 ### Trimming reads to 31 nt
@@ -127,12 +121,12 @@ TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
 TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
 __TagDust__
 
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
 echo -ne "tagdust\t$ID\t"
-tagdust tagdust.fa N*.$ID.fq -o $LIBRARY.$ID.dusted.fastq 2>&1 |
+tagdust tagdust.fa DRR014141.$ID.fq -o DRR014141.$ID.dusted.fastq 2>&1 |
   grep -e rejected | cut -f1
-done | tee $LIBRARY.tagdust.log
+done | tee DRR014141.tagdust.log
 ```
 
 ### Alignment on the rat genome version 4
@@ -142,7 +136,7 @@ the current directory, using `rn4_male` as a base name.
 
 ```{r align, engine="bash", dependson='tagdust'}
 GENOME=rn4_male
-for FQ in *dusted.fastq
+for FQ in *.dusted.fastq
 do
   bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
   bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
@@ -158,21 +152,21 @@ done
 Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
 
 ```{r rrnadust, engine="bash", dependson='align'}
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "rdna\t$ID\t"
-  (rRNAdust -t8 rat_rDNA.fa $LIBRARY.$ID.bam | samtools view -bS  - 2> /dev/null | sponge $LIBRARY.$ID.bam) 2>&1 | sed 's/Excluded: //'
-done | tee $LIBRARY.rdna.log
+  (rRNAdust -t8 rat_rDNA.fa DRR014141.$ID.bam | samtools view -bS  - 2> /dev/null | sponge DRR014141.$ID.bam) 2>&1 | sed 's/Excluded: //'
+done | tee DRR014141.rdna.log
 ```
 
 ### Alignment statistics
 
 ```{r align_stats, engine="bash", dependson='rrnadust'}
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "mapped\t$ID\t"
-  (samtools flagstat $LIBRARY.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee $LIBRARY.mapped.log
+  (samtools flagstat DRR014141.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee DRR014141.mapped.log
 ```
 
 ### Filter out possible strand-invasion tags
@@ -189,15 +183,15 @@ added, with the same semantics as in `samtools`.  It is available at
 
 ```{r strand_invasion, engine="bash", dependson='rrnadust'}
 ERRORS=2
-for BAM in $LIBRARY.???_?.bam
+for BAM in DRR014141.???_?.bam
 do
   find_strand_invasion.pl -f $BAM -g rn4_male.fa -e $ERRORS -s TATA
 done
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "strand-invasion-$ERRORS\t$ID\t"
-  (samtools flagstat ${LIBRARY}.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee $LIBRARY.strand-invasion-$ERRORS.log
+  (samtools flagstat DRR014141.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee DRR014141.strand-invasion-$ERRORS.log
 ```
 
 <a name="clustering">Tag clustering</a>
@@ -224,15 +218,15 @@ See also [Carninci et al., Nature Genetics 38
 examples of CAGE tag clustering.
 
 ```{r tag_clustering, engine="bash", dependson='strand_invasion'}
-level1.py -o $LIBRARY.l1.osc.gz -F 516 \
-  NCms10010.???_?.bam \
-  NCms10010.???_?_nw_?_??????_filtered_sorted.bam
+level1.py -o DRR014141.l1.osc.gz -F 516 \
+  DRR014141.???_?.bam \
+  DRR014141.???_?_nw_?_??????_filtered_sorted.bam
 
-level2.py -o $LIBRARY.l2.osc -t 0 $LIBRARY.l1.osc.gz
-gzip $LIBRARY.l2.osc
+level2.py -o DRR014141.l2.osc -t 0 DRR014141.l1.osc.gz
+gzip DRR014141.l2.osc
 ```
 
-The resulting file NCms10010.l1.osc.gz can be loaded in the
+The resulting file `DRR014141.l1.osc.gz` can be loaded in the
 [Zenbu](http://fantom.gsc.riken.jp/zenbu/) system to browse the alignments on
 the rat genome.
 
@@ -284,13 +278,13 @@ cat mart_export.txt |
 ### Gene symbols
 
 ```{r gene_symbols, engine="bash", dependson='convert_biomart'}
-zcat $LIBRARY.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l1.bed
-zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
-zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
+zcat DRR014141.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l1.bed
+zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
+zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
 
-bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.symbols.bed -s -loj |
+bedtools intersect -a DRR014141.l2.bed -b rn4_male.symbols.bed -s -loj |
   awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' | 
-  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.genes
+  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.genes
 ```
 
 ### Repeated elements
@@ -298,9 +292,9 @@ bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.symbols.bed -s -loj |
 Download the repeatmasker track from the [UCSC genome browser](http://genome.ucsc.edu) and save it in a file called `rn4_male.repeatmasker.bed`.
 
 ```{r intersect_rmsk, engine="bash"}
-bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
+bedtools intersect -a DRR014141.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
   awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' |
-  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.rmsk
+  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.rmsk
 ```
 
 <a name="r-prep">Preparation for statistical analysis</a>
@@ -316,15 +310,13 @@ The following commands load the level 1 and 2 clusters into data frames where
 the column names correspond to the sample IDs defined above.
 
 ```{r load_data, dependson='tag_clustering'}
-LIBRARY <- system("echo $LIBRARY", intern=TRUE)
-
 library(oscR)
 
-l1 <- read.osc(paste(LIBRARY,'l1','osc', 'gz',sep='.'), drop.coord=T, drop.norm=T)
-l2 <- read.osc(paste(LIBRARY,'l2','osc', 'gz',sep='.'), drop.coord=T, drop.norm=T)
+l1 <- read.osc("DRR014141.l1.osc.gz", drop.coord=T, drop.norm=T)
+l2 <- read.osc("DRR014141.l2.osc.gz", drop.coord=T, drop.norm=T)
 
-colnames(l1) <- sub('raw.NCms1.....','',colnames(l1))
-colnames(l2) <- sub('raw.NCms1.....','',colnames(l2))
+colnames(l1) <- sub('raw.DRR014141.','',colnames(l1))
+colnames(l2) <- sub('raw.DRR014141.','',colnames(l2))
 
 colnames(l1) <- sub('_......_filtered_sorted', '', colnames(l1))
 colnames(l2) <- sub('_......_filtered_sorted', '', colnames(l2))
@@ -386,9 +378,9 @@ L2.sd <- data.frame(
 ### Annotation of the results
 
 ```{r load_gene_symbols, dependson=c('gene_symbols','intersect_rmsk')}
-genesymbols <- read.table(paste(LIBRARY,'l2','genes',sep='.'), col.names=c("cluster","symbol"))
+genesymbols <- read.table("DRR014141.l2.genes", col.names=c("cluster","symbol"))
 rownames(genesymbols) <- genesymbols$cluster
-genesymbols$rmsk <- read.table(paste(LIBRARY,'l2','rmsk',sep='.'), col.names=c("cluster","rmsk"))[,'rmsk']
+genesymbols$rmsk <- read.table("DRR014141.l2.rmsk", col.names=c("cluster","rmsk"))[,'rmsk']
 ```
 
 <a name="differential-expression">Differential representation analysis<a>
@@ -590,7 +582,7 @@ l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.logFC"] <- topTags(dl_nw_2.com, Inf)
 l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.FDR"]   <- topTags(dl_nw_2.com, Inf)$table$FDR
 l2$symbol <- genesymbols$symbol
 l2$rmsk <- genesymbols$rmsk
-write.csv(file=paste(LIBRARY, "DGE", "csv", sep = "."), l2)
+write.csv(file="DRR014141.DGE.csv", l2)
 ```
 
 

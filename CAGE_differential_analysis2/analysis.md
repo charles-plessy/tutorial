@@ -1,12 +1,16 @@
 
 
-Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions
-==================================================================================
 
-This supplementary file documents the commands run to compare the expression
-levels of CAGE clusters in libraries made with different template-switching
-oligonucleotides.  It is also intended as a self-executable tutorial exemplifying
-how to make differential gene expression analysis with nanoCAGE in general.
+Digital expression comparison between nanoCAGE libraries testing variant template-switching oligonucleotides
+============================================================================================================
+
+This tutorial is an updated version of the supplementary material of the
+manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions_
+([Harbers et al., 2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that
+documented the commands run to compare the expression levels of CAGE clusters
+in libraries made with different template-switching oligonucleotides.
+
+It is intended as an example on how to compare shallow-sequenced nanoCAGE libraries.
 
 Table of contents
 -----------------
@@ -27,50 +31,39 @@ Table of contents
 <a id="data-prep">Data download and preparation</a>
 ---------------------------------------------------
 
-The following commands are run in a command-line terminal on Unix systems.
-
-The nanoCAGE library is named `NCms10010`.  To better re-use commands, this name is put
-in an environment variable.
-
-
-```bash
-export LIBRARY=NCms10010
-```
-
-
 ### Information and download
 
-The `NCms10010` library was made with total RNA from rat muscle.  It is
-comparing template-switching oligonucleotides that end in RNA (r), DNA (d) or
-LNA (l) bases.  The comparisons were multiplexed in triplicates.
+The `DRR014141` library (`NCms10010` in the original publication)  was made
+with total RNA from rat muscle.  It is comparing template-switching
+oligonucleotides that end in RNA (r), DNA (d) or LNA (l) bases.  The
+comparisons were multiplexed in triplicates.
 
 The data is a single-end MiSeq run (ID: `121012_M00528_0022_AMS2003997-00050`)
-of 4,682,200 reads.  The output files (`s_G1_L001_R1_001.fastq.gz` and
-`s_G1_L001_R1_002.fastq.gz` were decompressed, concatenated, and re-compressed
-with `xz`.  The resulting file is available for download from the supplementary
-material, and from RIKEN.  Deposition to DDBJ is in progress.
+of 4,682,200 reads.  The following commands download (`wget`) the data from
+[DRA](http://trace.ddbj.nig.ac.jp/dra/index.html) (DDBJ's Sequence Read Archive)
+and test its integrity (`md5sum`).
 
 
 ```bash
-wget http://genome.gsc.riken.jp/plessy-20130430/$LIBRARY.fastq.xz
-echo '47b797f36cd20d6548e80e09dc05daa1  NCms10010.fastq.xz' | md5sum -c
+wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
+echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
 ```
 
 ```
-## NCms10010.fastq.xz: OK
+## DRR014141.fastq.bz2: OK
 ```
 
 
 ### De-multiplexing
 
 The barcodes and sample IDs are associated in a whitespace-delimited file
-called `NCms10010.id` containing the following.  The sample IDs encode the type
+called `DRR014141.id` containing the following.  The sample IDs encode the type
 of template-switching oligonucleotide used, which each letter representing the
 chemical nature of the third, second and first nucleotide, from the 3′ end.
 
 
 ```bash
-cat <<__ID__ > $LIBRARY.id
+cat <<__ID__ > DRR014141.id
 rrr_1	CACTGA
 rrr_2	GCTCTC
 rrr_3	TCGCGT
@@ -91,16 +84,16 @@ __ID__
 
 
 Samples were demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-The number of extracted reads was collected in a file named `NCms10010.extracted.log`.
+The number of extracted reads was collected in a file named `DRR014141.extracted.log`.
 
 
 ```bash
-xzcat $LIBRARY.fastq.xz |
-  fastx_barcode_splitter.pl --bcfile $LIBRARY.id --prefix $LIBRARY. --suffix .fq --bol --exact |
+bzcat DRR014141.fastq.bz2 |
+  fastx_barcode_splitter.pl --bcfile DRR014141.id --prefix DRR014141. --suffix .fq --bol --exact |
   sed 1d | cut -f1,2 |
   perl -ne 'print "extracted\t$_"' |
   grep -v -e unmatched -e total |
-  tee $LIBRARY.extracted.log
+  tee DRR014141.extracted.log
 ```
 
 ```
@@ -157,12 +150,12 @@ TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
 TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
 __TagDust__
 
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
 echo -ne "tagdust\t$ID\t"
-tagdust tagdust.fa N*.$ID.fq -o $LIBRARY.$ID.dusted.fastq 2>&1 |
+tagdust tagdust.fa DRR014141.$ID.fq -o DRR014141.$ID.dusted.fastq 2>&1 |
   grep -e rejected | cut -f1
-done | tee $LIBRARY.tagdust.log
+done | tee DRR014141.tagdust.log
 ```
 
 ```
@@ -192,7 +185,7 @@ the current directory, using `rn4_male` as a base name.
 
 ```bash
 GENOME=rn4_male
-for FQ in *dusted.fastq
+for FQ in *.dusted.fastq
 do
   bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
   bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
@@ -210,11 +203,11 @@ Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V0
 
 
 ```bash
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "rdna\t$ID\t"
-  (rRNAdust -t8 rat_rDNA.fa $LIBRARY.$ID.bam | samtools view -bS  - 2> /dev/null | sponge $LIBRARY.$ID.bam) 2>&1 | sed 's/Excluded: //'
-done | tee $LIBRARY.rdna.log
+  (rRNAdust -t8 rat_rDNA.fa DRR014141.$ID.bam | samtools view -bS  - 2> /dev/null | sponge DRR014141.$ID.bam) 2>&1 | sed 's/Excluded: //'
+done | tee DRR014141.rdna.log
 ```
 
 ```
@@ -240,11 +233,11 @@ done | tee $LIBRARY.rdna.log
 
 
 ```bash
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "mapped\t$ID\t"
-  (samtools flagstat $LIBRARY.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee $LIBRARY.mapped.log
+  (samtools flagstat DRR014141.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee DRR014141.mapped.log
 ```
 
 ```
@@ -275,21 +268,21 @@ in LNA- or DNA-based template-switching oligonucleotides.
 The following commands need an updated version of the `find_strand_invasion.pl`
 that was in Tang et al's supplementary material, where a new `-f` option is
 added, with the same semantics as in `samtools`.  It is available at
-<http://genome.gsc.riken.jp/plessy-20130430/find_strand_invasion-20130307.pl>.
+<https://github.com/davetang/23180801>.
 
 
 
 ```bash
 ERRORS=2
-for BAM in $LIBRARY.???_?.bam
+for BAM in DRR014141.???_?.bam
 do
   find_strand_invasion.pl -f $BAM -g rn4_male.fa -e $ERRORS -s TATA
 done
-for ID in $( awk '{print $1}' $LIBRARY.id )
+for ID in $( awk '{print $1}' DRR014141.id )
 do
   echo -ne "strand-invasion-$ERRORS\t$ID\t"
-  (samtools flagstat ${LIBRARY}.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee $LIBRARY.strand-invasion-$ERRORS.log
+  (samtools flagstat DRR014141.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
+done | tee DRR014141.strand-invasion-$ERRORS.log
 ```
 
 ```
@@ -336,16 +329,16 @@ examples of CAGE tag clustering.
 
 
 ```bash
-level1.py -o $LIBRARY.l1.osc.gz -F 516 \
-  NCms10010.???_?.bam \
-  NCms10010.???_?_nw_?_??????_filtered_sorted.bam
+level1.py -o DRR014141.l1.osc.gz -F 516 \
+  DRR014141.???_?.bam \
+  DRR014141.???_?_nw_?_??????_filtered_sorted.bam
 
-level2.py -o $LIBRARY.l2.osc -t 0 $LIBRARY.l1.osc.gz
-gzip $LIBRARY.l2.osc
+level2.py -o DRR014141.l2.osc -t 0 DRR014141.l1.osc.gz
+gzip DRR014141.l2.osc
 ```
 
 
-The resulting file NCms10010.l1.osc.gz can be loaded in the
+The resulting file `DRR014141.l1.osc.gz` can be loaded in the
 [Zenbu](http://fantom.gsc.riken.jp/zenbu/) system to browse the alignments on
 the rat genome.
 
@@ -399,13 +392,13 @@ cat mart_export.txt |
 ```
 
 ```bash
-zcat $LIBRARY.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l1.bed
-zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
-zcat $LIBRARY.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > $LIBRARY.l2.bed
+zcat DRR014141.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l1.bed
+zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
+zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
 
-bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.symbols.bed -s -loj |
+bedtools intersect -a DRR014141.l2.bed -b rn4_male.symbols.bed -s -loj |
   awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' | 
-  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.genes
+  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.genes
 ```
 
 
@@ -415,9 +408,9 @@ Download the repeatmasker track from the [UCSC genome browser](http://genome.ucs
 
 
 ```bash
-bedtools intersect -a $LIBRARY.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
+bedtools intersect -a DRR014141.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
   awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' |
-  bedtools groupby -g 1 -c 2 -o distinct > $LIBRARY.l2.rmsk
+  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.rmsk
 ```
 
 
@@ -435,17 +428,13 @@ the column names correspond to the sample IDs defined above.
 
 
 ```r
-LIBRARY <- system("echo $LIBRARY", intern = TRUE)
-
 library(oscR)
 
-l1 <- read.osc(paste(LIBRARY, "l1", "osc", "gz", sep = "."), drop.coord = T, 
-    drop.norm = T)
-l2 <- read.osc(paste(LIBRARY, "l2", "osc", "gz", sep = "."), drop.coord = T, 
-    drop.norm = T)
+l1 <- read.osc("DRR014141.l1.osc.gz", drop.coord = T, drop.norm = T)
+l2 <- read.osc("DRR014141.l2.osc.gz", drop.coord = T, drop.norm = T)
 
-colnames(l1) <- sub("raw.NCms1.....", "", colnames(l1))
-colnames(l2) <- sub("raw.NCms1.....", "", colnames(l2))
+colnames(l1) <- sub("raw.DRR014141.", "", colnames(l1))
+colnames(l2) <- sub("raw.DRR014141.", "", colnames(l2))
 
 colnames(l1) <- sub("_......_filtered_sorted", "", colnames(l1))
 colnames(l2) <- sub("_......_filtered_sorted", "", colnames(l2))
@@ -486,16 +475,13 @@ TPM <- function(clusters) {
 
 L2 <- TPM(l2)
 
-L2.means <- data.frame(ddd = apply(L2[, ddd], 1, mean), ddl = apply(L2[, ddl], 
-    1, mean), dll = apply(L2[, dll], 1, mean), lll = apply(L2[, lll], 1, mean), 
+L2.means <- data.frame(ddd = apply(L2[, ddd], 1, mean), ddl = apply(L2[, ddl], 1, mean), dll = apply(L2[, dll], 1, mean), lll = apply(L2[, lll], 1, mean), 
     rrr = apply(L2[, rrr], 1, mean))
 
-L2.means_nw_2 <- data.frame(ddd = apply(L2[, ddd_nw_2], 1, mean), ddl = apply(L2[, 
-    ddl_nw_2], 1, mean), dll = apply(L2[, dll_nw_2], 1, mean), lll = apply(L2[, 
+L2.means_nw_2 <- data.frame(ddd = apply(L2[, ddd_nw_2], 1, mean), ddl = apply(L2[, ddl_nw_2], 1, mean), dll = apply(L2[, dll_nw_2], 1, mean), lll = apply(L2[, 
     lll_nw_2], 1, mean), rrr = apply(L2[, rrr_nw_2], 1, mean))
 
-L2.sd <- data.frame(ddd = apply(L2[, ddd], 1, sd), ddl = apply(L2[, ddl], 1, 
-    sd), dll = apply(L2[, dll], 1, sd), lll = apply(L2[, lll], 1, sd), rrr = apply(L2[, 
+L2.sd <- data.frame(ddd = apply(L2[, ddd], 1, sd), ddl = apply(L2[, ddl], 1, sd), dll = apply(L2[, dll], 1, sd), lll = apply(L2[, lll], 1, sd), rrr = apply(L2[, 
     rrr], 1, sd))
 ```
 
@@ -504,11 +490,9 @@ L2.sd <- data.frame(ddd = apply(L2[, ddd], 1, sd), ddl = apply(L2[, ddl], 1,
 
 
 ```r
-genesymbols <- read.table(paste(LIBRARY, "l2", "genes", sep = "."), col.names = c("cluster", 
-    "symbol"))
+genesymbols <- read.table("DRR014141.l2.genes", col.names = c("cluster", "symbol"))
 rownames(genesymbols) <- genesymbols$cluster
-genesymbols$rmsk <- read.table(paste(LIBRARY, "l2", "rmsk", sep = "."), col.names = c("cluster", 
-    "rmsk"))[, "rmsk"]
+genesymbols$rmsk <- read.table("DRR014141.l2.rmsk", col.names = c("cluster", "rmsk"))[, "rmsk"]
 ```
 
 
@@ -543,8 +527,7 @@ details.
 
 
 ```r
-x <- DGEList(counts = l2[, c(lll, rrr)], group = c(rep("lll", 3), rep("rrr", 
-    3)), remove.zeros = TRUE)
+x <- DGEList(counts = l2[, c(lll, rrr)], group = c(rep("lll", 3), rep("rrr", 3)), remove.zeros = TRUE)
 ```
 
 ```
@@ -564,16 +547,14 @@ plotMDS(lr)
 ![plot of chunk LNA_vs_RNA](figure/LNA_vs_RNA1.png) 
 
 ```r
-plotSmear(lr.com, de.tags = rownames(lr.com)[decideTestsDGE(lr.com) != 0], cex = 0.8, 
-    main = "LNA / RNA", ylab = "LNA (bottom) / RNA (top)")
+plotSmear(lr.com, de.tags = rownames(lr.com)[decideTestsDGE(lr.com) != 0], cex = 0.8, main = "LNA / RNA", ylab = "LNA (bottom) / RNA (top)")
 ```
 
 ![plot of chunk LNA_vs_RNA](figure/LNA_vs_RNA2.png) 
 
 ```r
 
-x <- DGEList(counts = l2[, c(lll_nw_2, rrr_nw_2)], group = c(rep("lll_nw_2", 
-    3), rep("rrr_nw_2", 3)), remove.zeros = TRUE)
+x <- DGEList(counts = l2[, c(lll_nw_2, rrr_nw_2)], group = c(rep("lll_nw_2", 3), rep("rrr_nw_2", 3)), remove.zeros = TRUE)
 ```
 
 ```
@@ -593,8 +574,7 @@ plotMDS(lr_nw_2)
 ![plot of chunk LNA_vs_RNA](figure/LNA_vs_RNA3.png) 
 
 ```r
-plotSmear(lr_nw_2.com, de.tags = rownames(lr_nw_2.com)[decideTestsDGE(lr_nw_2.com) != 
-    0], cex = 0.8, main = "LNA / RNA (filtered)", ylab = "LNA (bottom) / RNA (top)")
+plotSmear(lr_nw_2.com, de.tags = rownames(lr_nw_2.com)[decideTestsDGE(lr_nw_2.com) != 0], cex = 0.8, main = "LNA / RNA (filtered)", ylab = "LNA (bottom) / RNA (top)")
 ```
 
 ![plot of chunk LNA_vs_RNA](figure/LNA_vs_RNA4.png) 
@@ -613,8 +593,7 @@ libraries compared to LNA.  The top 100 stronger fold changes in each direction 
 
 ```r
 # Summary of the top 100 clusters enriched in RNA libraries.
-summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:100, ], genesymbols[, 
-    -1], by = 0, sort = FALSE))
+summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:100, ], genesymbols[, -1], by = 0, sort = FALSE))
 ```
 
 ```
@@ -630,8 +609,7 @@ summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:100, ], genes
 
 ```r
 # Top 15 clusters enriched in RNA libraries.
-merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:15, ], genesymbols[, 
-    -1], by = 0, sort = FALSE)
+merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:15, ], genesymbols[, -1], by = 0, sort = FALSE)
 ```
 
 ```
@@ -655,8 +633,7 @@ merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:15, ], genesymbols[,
 
 ```r
 # Summary of the top 100 clusters enriched in LNA libraries.
-summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0)[1:100, ], genesymbols[, 
-    -1], by = 0, sort = FALSE))
+summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0)[1:100, ], genesymbols[, -1], by = 0, sort = FALSE))
 ```
 
 ```
@@ -690,7 +667,7 @@ library(reshape)
 ```
 
 ```
-## The following object is masked from 'package:plyr':
+## The following objects are masked from 'package:plyr':
 ## 
 ## rename, round_any
 ```
@@ -960,7 +937,7 @@ l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.logFC"] <- topTags(dl_nw_2.com, Inf)
 l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.FDR"] <- topTags(dl_nw_2.com, Inf)$table$FDR
 l2$symbol <- genesymbols$symbol
 l2$rmsk <- genesymbols$rmsk
-write.csv(file = paste(LIBRARY, "DGE", "csv", sep = "."), l2)
+write.csv(file = "DRR014141.DGE.csv", l2)
 ```
 
 
@@ -989,23 +966,23 @@ sessionInfo()
 ```
 
 ```
-## R version 3.0.1 (2013-05-16)
+## R version 3.0.2 (2013-09-25)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
 ## 
 ## locale:
 ##  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C               LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8     LC_MONETARY=en_GB.UTF-8   
-##  [6] LC_MESSAGES=en_GB.UTF-8    LC_PAPER=C                 LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+##  [6] LC_MESSAGES=en_GB.UTF-8    LC_PAPER=en_GB.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
 ## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
 ## [1] methods   stats     graphics  grDevices utils     datasets  base     
 ## 
 ## other attached packages:
-## [1] ggplot2_0.9.3.1 reshape_0.8.4   plyr_1.8        edgeR_3.2.4     limma_3.16.7    oscR_0.1.1     
+## [1] reshape_0.8.4   plyr_1.8        oscR_0.1.1      ggplot2_0.9.3.1 edgeR_3.2.4     limma_3.16.8   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] codetools_0.2-8    colorspace_1.2-2   dichromat_2.0-0    digest_0.6.3       evaluate_0.4.3     formatR_0.7        grid_3.0.1        
+##  [1] codetools_0.2-8    colorspace_1.2-2   dichromat_2.0-0    digest_0.6.3       evaluate_0.4.3     formatR_0.7        grid_3.0.2        
 ##  [8] gtable_0.1.2       knitr_1.2          labeling_0.1       MASS_7.3-26        munsell_0.4        proto_0.3-10       RColorBrewer_1.0-5
-## [15] reshape2_1.2.2     scales_0.2.3       stringr_0.6.2      tools_3.0.1
+## [15] reshape2_1.2.2     scales_0.2.3       stringr_0.6.2      tools_3.0.2
 ```
 
