@@ -142,7 +142,7 @@ The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) 
 ### Removal of artifacts with TagDust
 
 Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-and install it in the user's path.
+and install it in the user's path.  See the main [README](../README.md) for details.
 
 
 ```bash
@@ -993,14 +993,9 @@ sessionInfo()
 ## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
-## [1] methods   stats     graphics  grDevices utils     datasets  base     
-## 
-## other attached packages:
-## [1] reshape_0.8.4   plyr_1.8        oscR_0.1.1      ggplot2_0.9.3.1 edgeR_3.2.4     limma_3.16.8   
+## [1] stats     graphics  grDevices utils     datasets  base     
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] colorspace_1.2-2   dichromat_2.0-0    digest_0.6.3       evaluate_0.4.3     formatR_0.7        grid_3.0.2         gtable_0.1.2      
-##  [8] knitr_1.2          labeling_0.1       MASS_7.3-26        munsell_0.4        proto_0.3-10       RColorBrewer_1.0-5 reshape2_1.2.2    
-## [15] scales_0.2.3       stringr_0.6.2      tools_3.0.2
+## [1] digest_0.6.3   evaluate_0.4.3 formatR_0.7    knitr_1.2      stringr_0.6.2  tools_3.0.2
 ```
 

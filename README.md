@@ -21,3 +21,23 @@ order to use them.  If you had to create the `bin` directory, it will only be
 taken into account at your next connection (see
 [stackoverflow](http://stackoverflow.com/questions/16366986/adding-bin-directory-in-your-path)
 for alternatives).
+
+Here is for example how to download, compile and install the
+[tagdust](http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz)
+software.  By convention, we will download the software in a directory called
+`src`.  _Compiling_ means to produce the executable program suitable for your
+computer, using the [source code](https://en.wikipedia.org/wiki/Source_code)
+that was downloaded.  On Debian systems, the programs necessary for compiling a
+program made in the C programming language can be installed through the
+`build-essential` package.
+
+```
+cd                    # move back to the home directory
+mkdir -p src          # create the src directory if it did not exist.
+cd src                # enter the src directory
+wget http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz   # download tagdust
+tar xvf tagdust.tgz   # unpack tagdust
+cd tagdust            # enter the freshly tagdust directory created by tagdust
+make                  # compile the program
+cp tagdust $HOME/bin  # copy tagdust to the 'bin' directory in your home directory
+```

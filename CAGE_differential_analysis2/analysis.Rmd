@@ -114,7 +114,7 @@ The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) 
 ### Removal of artifacts with TagDust
 
 Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-and install it in the user's path.
+and install it in the user's path.  See the main [README](../README.md) for details.
 
 ```{r tagdust, engine="bash", dependson='trim_reads'}
 cat > tagdust.fa <<__TagDust__
