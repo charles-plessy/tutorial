@@ -5,12 +5,15 @@ Digital expression comparison between nanoCAGE libraries testing variant templat
 ============================================================================================================
 
 This tutorial is an updated version of the supplementary material of the
-manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions_
-([Harbers et al., 2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that
-documented the commands run to compare the expression levels of CAGE clusters
-in libraries made with different template-switching oligonucleotides.
+manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in
+Template-Switching Reactions_ ([Harbers et al.,
+2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that documented the
+commands run to compare the expression levels of CAGE clusters in libraries
+made with different template-switching oligonucleotides.  It is intended as an
+example on how to compare shallow-sequenced nanoCAGE libraries.
 
-It is intended as an example on how to compare shallow-sequenced nanoCAGE libraries.
+See the main [README](../README.md) for general recommendations on how or what
+to prepare before running this tutorial.
 
 Table of contents
 -----------------
@@ -130,6 +133,8 @@ do
 done
 ```
 
+
+The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) collection.
 
 <a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
 ------------------------------------------------------------------------------------------
@@ -949,13 +954,26 @@ This analysis was done on a iMac with a i7 hyperthreaded quad-core CPU (2.93
 GHz) and 12 GiB of memory, running [Debian](http://www.debian.org) system, with
 the following packages installed.
 
- - bedtools 2.17.0-1
- - bwa 0.6.2-2
- - fastx-toolkit 0.0.13.2-1
- - moreutils 0.47 (for the `sponge` command)
- - r-base (see below)
- - r-bioc-edgeR (see below)
- - samtools 0.1.19-1
+
+```bash
+dpkg -l bedtools bwa fastx-toolkit moreutils r-base r-bioc-edger samtools
+```
+
+```
+## Desired=Unknown/Install/Remove/Purge/Hold
+## | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+## |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+## ||/ Name                                        Version                            Architecture Description
+## +++-===========================================-==================================-============-==============================================================================
+## ii  bedtools                                    2.17.0-1                           amd64        suite of utilities for comparing genomic features
+## ii  bwa                                         0.6.2-2                            amd64        Burrows-Wheeler Aligner
+## ii  fastx-toolkit                               0.0.13.2-1                         amd64        FASTQ/A short nucleotide reads pre-processing tools
+## ii  moreutils                                   0.47                               amd64        additional Unix utilities
+## ii  r-base                                      3.0.2-1                            all          GNU R statistical computation and graphics system
+## ii  r-bioc-edger                                3.2.4~dfsg-1                       amd64        Empirical analysis of digital gene expression data in R
+## ii  samtools                                    0.1.19-1                           amd64        processing sequence alignments in SAM and BAM formats
+```
+
 
 This tutorial was made with the [knitr](http://yihui.name/knitr/) library for
 `R`, that produces HTML pages from templates containing executable code.
@@ -981,8 +999,8 @@ sessionInfo()
 ## [1] reshape_0.8.4   plyr_1.8        oscR_0.1.1      ggplot2_0.9.3.1 edgeR_3.2.4     limma_3.16.8   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] codetools_0.2-8    colorspace_1.2-2   dichromat_2.0-0    digest_0.6.3       evaluate_0.4.3     formatR_0.7        grid_3.0.2        
-##  [8] gtable_0.1.2       knitr_1.2          labeling_0.1       MASS_7.3-26        munsell_0.4        proto_0.3-10       RColorBrewer_1.0-5
-## [15] reshape2_1.2.2     scales_0.2.3       stringr_0.6.2      tools_3.0.2
+##  [1] colorspace_1.2-2   dichromat_2.0-0    digest_0.6.3       evaluate_0.4.3     formatR_0.7        grid_3.0.2         gtable_0.1.2      
+##  [8] knitr_1.2          labeling_0.1       MASS_7.3-26        munsell_0.4        proto_0.3-10       RColorBrewer_1.0-5 reshape2_1.2.2    
+## [15] scales_0.2.3       stringr_0.6.2      tools_3.0.2
 ```
 

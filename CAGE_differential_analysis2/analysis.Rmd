@@ -7,12 +7,15 @@ Digital expression comparison between nanoCAGE libraries testing variant templat
 ============================================================================================================
 
 This tutorial is an updated version of the supplementary material of the
-manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching Reactions_
-([Harbers et al., 2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that
-documented the commands run to compare the expression levels of CAGE clusters
-in libraries made with different template-switching oligonucleotides.
+manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in
+Template-Switching Reactions_ ([Harbers et al.,
+2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that documented the
+commands run to compare the expression levels of CAGE clusters in libraries
+made with different template-switching oligonucleotides.  It is intended as an
+example on how to compare shallow-sequenced nanoCAGE libraries.
 
-It is intended as an example on how to compare shallow-sequenced nanoCAGE libraries.
+See the main [README](../README.md) for general recommendations on how or what
+to prepare before running this tutorial.
 
 Table of contents
 -----------------
@@ -102,6 +105,8 @@ do
   fastx_trimmer -f 22 -l 52 -Q33 < $FASTQ | sponge $FASTQ
 done
 ```
+
+The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) collection.
 
 <a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
 ------------------------------------------------------------------------------------------
@@ -593,13 +598,9 @@ This analysis was done on a iMac with a i7 hyperthreaded quad-core CPU (2.93
 GHz) and 12 GiB of memory, running [Debian](http://www.debian.org) system, with
 the following packages installed.
 
- - bedtools 2.17.0-1
- - bwa 0.6.2-2
- - fastx-toolkit 0.0.13.2-1
- - moreutils 0.47 (for the `sponge` command)
- - r-base (see below)
- - r-bioc-edgeR (see below)
- - samtools 0.1.19-1
+```{r list-packages, engine="bash"}
+dpkg -l bedtools bwa fastx-toolkit moreutils r-base r-bioc-edger samtools
+```
 
 This tutorial was made with the [knitr](http://yihui.name/knitr/) library for
 `R`, that produces HTML pages from templates containing executable code.
