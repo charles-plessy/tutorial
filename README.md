@@ -9,11 +9,17 @@ Various tutorials on how to analyse
  * [CAGE differential analysis2](./CAGE_differential_analysis2/analysis.md)
 
 These tutorials are designed to be executed on a Linux system's command line
-interface (also called _Terminal_or _shell_).  The programs used are assumed to
-be installed in advance.  On the [Debian](http://www.debian.org) operating
-system, many of them (BWA, SAMtools, BEDTools, ...) are available pre-packaged
-and will be installed (altogether with many other programs) by the command
-`apt-get install med-bio`.
+interface (also called _Terminal_or _shell_).  I recommend the book _[The Linux
+Command Line][]_, by William E. Shotts, Jr, January 2012, [no starch press][]
+to people not familiar with entering commands on the keybord.
+
+[The Linux Command Line]: http://linuxcommand.org/tlcl.php "A Complete Introduction"
+[no starch press]: http://nostarch.com/tlcl.htm "the finest in geek entertainment"
+
+The programs used are assumed to be installed in advance.  On the
+[Debian](http://www.debian.org) operating system, many of them (BWA, SAMtools,
+BEDTools, ...) are available pre-packaged and will be installed (altogether
+with many other programs) by the command `apt-get install med-bio`.
 
 Other software have to be downloaded and installed by hand.  Place them in the
 `bin` directory in your home directory, and set their executable property in
