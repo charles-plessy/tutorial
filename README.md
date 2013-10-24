@@ -4,9 +4,9 @@ Tutorials for analysing CAGE and Deep-RACE data.
 Various tutorials on how to analyse
 [CAGE](https://en.wikipedia.org/wiki/Cap_analysis_gene_expression) data.
 
- * Deep-RACE (in preparation)
- * CAGE differential analysis2 (in preparation)
- * [CAGE differential analysis2](./CAGE_differential_analysis2/analysis.md)
+ * [Deep-RACE](./Deep-RACE1/analysis.md) (work in progress)
+ * [CAGE differential analysis 1](./CAGE_differential_analysis1/analysis.md) (work in progress)
+ * [CAGE differential analysis 2](./CAGE_differential_analysis2/analysis.md)
 
 These tutorials are designed to be executed on a Linux system's command line
 interface (also called _Terminal_ or _shell_).  I recommend the book _[The Linux
