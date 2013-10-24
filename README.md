@@ -4,7 +4,7 @@ Tutorials for analysing CAGE and Deep-RACE data.
 Various tutorials on how to analyse
 [CAGE](https://en.wikipedia.org/wiki/Cap_analysis_gene_expression) data.
 
- * [Deep-RACE](./Deep-RACE1/analysis.md) (work in progress)
+ * [Deep-RACE](./Deep-RACE1/Deep-RACE1.md) (work in progress)
  * [CAGE differential analysis 1](./CAGE_differential_analysis1/analysis.md) (work in progress)
  * [CAGE differential analysis 2](./CAGE_differential_analysis2/analysis.md)
 
