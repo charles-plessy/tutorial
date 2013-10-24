@@ -9,7 +9,7 @@ Various tutorials on how to analyse
  * [CAGE differential analysis2](./CAGE_differential_analysis2/analysis.md)
 
 These tutorials are designed to be executed on a Linux system's command line
-interface (also called _Terminal_or _shell_).  I recommend the book _[The Linux
+interface (also called _Terminal_ or _shell_).  I recommend the book _[The Linux
 Command Line][]_, by William E. Shotts, Jr, January 2012, [no starch press][]
 to people not familiar with entering commands on the keybord.
 
