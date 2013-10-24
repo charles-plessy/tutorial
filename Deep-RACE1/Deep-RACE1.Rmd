@@ -41,16 +41,22 @@ bedtools merge -n -d 100 -i SRR006565.bed |
 bedtools merge -s -n -d -1 -i SRR006565.bed | bedtools window -a stdin -b SRR006565.mask -w 1 -u > SRR006565.csv
 ```
 
-```{r dev="svg"}
+```{r lodad_data_in_R}
 deeprace <- read.table(
   'SRR006565.csv',
   col.names=c('chr','start','end','score','strand')
 )
+```
 
+Given that the target regions are known, it is very easy to look at the
+distribution of the reads in defined windows; here in a windown including on
+the reference 5′ end of the gene _HIST1H3C_ at the position 26,045,639.
+
+```{r example_chromosome_6, dependson="lodad_data_in_R", dev="png"}
 with(
   subset(
     deeprace,
-    chr == "chr6" & start > 26045605 & start < 26045646
+    chr == "chr6" & start > 26045439 & start < 26045839
   ),
   plot(
     start,
@@ -60,4 +66,5 @@ with(
     xlab="coordinates"
   )
 )
+abline(v=26045639, col="red")
 ```
