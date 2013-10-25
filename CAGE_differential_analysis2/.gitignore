@@ -1,0 +1,13 @@
+*.bam
+*.csv
+*.fa
+*.fastq
+*.fq
+*.log
+cache/
+rn4_male.amb
+rn4_male.ann
+rn4_male.bwt
+rn4_male.fa
+rn4_male.pac
+rn4_male.sa

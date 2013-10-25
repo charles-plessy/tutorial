@@ -1,0 +1,11 @@
+*.bam
+*.bed
+*.fa
+*.fastq
+*.osc.gz
+for_paraclu.txt
+hg19_male.fa*
+l1-l2.txt
+paraclu.bed
+paraclu.txt
+cache/
