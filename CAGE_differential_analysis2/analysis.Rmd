@@ -310,6 +310,8 @@ The following commands are run in the [`R` package for statistical computing](ht
 ### Load the data.
 
 The oscR library is available at <https://github.com/charles-plessy/oscR>.
+Note that OSCTables can also be loaded with R's `read.table()` command (but pay
+attention to comment and quote characters, etc.).
 
 The following commands load the level 1 and 2 clusters into data frames where
 the column names correspond to the sample IDs defined above.
