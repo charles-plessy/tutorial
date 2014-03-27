@@ -1,0 +1,61 @@
+```{r echo=FALSE}
+options(width=100)
+knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_knit$set(verbose = TRUE)
+```
+
+Simplistic interrogation of FANTOM5's SDRF files
+================================================
+
+Simple shell functions to return or query library IDs
+-----------------------------------------------------
+
+should also work with $F5 pointed to the full mirror ?
+
+```{r, sdrf_show_functions, engine="sh", cache=FALSE, comment=NA}
+cat sdrf.sh
+```
+
+Download the SDRF files
+-----------------------
+
+```{r sdrf_lftp, engine="sh"}
+PHASE='phase1.2'
+echo 'mget */*sdrf.txt' |
+  lftp http://fantom.gsc.riken.jp/5/datafiles/$PHASE/basic
+wc -l *sdrf.txt
+```
+
+_Note: the SDRF files have one header line, so the total number of libraries is not the total number of lines._
+
+Library names are in column 14 and start with `CNhs` for HeliScopeCAGE
+libraries.  Phase 1.2 only contains HeliScopeCAGE libraries.
+
+```{r sdrf_count_libraries, engine="sh"}
+cut -f 14 *sdrf.txt |
+  grep -v 'Library Name' |   # Remove header lines.
+  cut -c 1-4 |
+  sort | uniq -c | sort -n
+```
+
+Examples of use
+---------------
+
+Find example that also return sRNA libraries
+
+```{r sdrf_SDRFlib_example, engine="bash"}
+source sdrf.sh
+
+SDRFlib pancreas
+```
+
+```{r sdrf_SDRFdesc_example, engine="bash"}
+source sdrf.sh
+
+for lib in $(SDRFlib pancreas);
+do
+  echo -ne "$lib\t"
+  SDRFdesc $lib
+done
+```
+
