@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Simplistic interrogation of FANTOM5&#39;s SDRF files</title>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>Simplistic interrogation of FANTOM5&#39;s SDRF files</h1>
+
+<h2>Simple shell functions to return or query library IDs</h2>
+
+<p>should also work with $F5 pointed to the full mirror ?</p>
+
+<pre><code class="sh">cat sdrf.sh
+</code></pre>
+
+<pre><code># Return all libraries.
+
+function SDRFlib {
+for SDRF in $(find ${F5-.} -name &#39;*sdrf.txt&#39;)
+do
+  grep &quot;$1&quot; $SDRF | cut -f14
+done
+}
+
+# Returns the description of a library.
+
+function SDRFdesc {
+for SDRF in $(find ${F5-.} -name &#39;*sdrf.txt&#39;)
+do
+  grep &quot;$1&quot; $SDRF | cut -f3
+done
+}
+</code></pre>
+
+<h2>Download the SDRF files</h2>
+
+<pre><code class="sh">PHASE=&#39;phase1.2&#39;
+echo &#39;mget */*sdrf.txt&#39; |
+  lftp http://fantom.gsc.riken.jp/5/datafiles/$PHASE/basic
+wc -l *sdrf.txt
+</code></pre>
+
+<pre><code>##       5 00_human.cell_line.LQhCAGE.hg19.assay_sdrf.txt
+##     258 00_human.cell_line.hCAGE.hg19.assay_sdrf.txt
+##      13 00_human.fractionation.hCAGE.hg19.assay_sdrf.txt
+##      51 00_human.primary_cell.LQhCAGE.hg19.assay_sdrf.txt
+##     489 00_human.primary_cell.hCAGE.hg19.assay_sdrf.txt
+##      30 00_human.timecourse.hCAGE.hg19.assay_sdrf.txt
+##     153 00_human.tissue.hCAGE.hg19.assay_sdrf.txt
+##       2 00_mouse.cell_line.hCAGE.mm9.assay_sdrf.txt
+##      27 00_mouse.primary_cell.LQhCAGE.mm9.assay_sdrf.txt
+##      85 00_mouse.primary_cell.hCAGE.mm9.assay_sdrf.txt
+##      29 00_mouse.qualitycontrol.hCAGE.mm9.assay_sdrf.txt
+##      21 00_mouse.timecourse.hCAGE.mm9.assay_sdrf.txt
+##       2 00_mouse.tissue.LQhCAGE.mm9.assay_sdrf.txt
+##     236 00_mouse.tissue.hCAGE.mm9.assay_sdrf.txt
+##    1401 total
+</code></pre>
+
+<p><em>Note: the SDRF files have one header line, so the total number of libraries is not the total number of lines.</em></p>
+
+<p>Library names are in column 14 and start with <code>CNhs</code> for HeliScopeCAGE
+libraries.  Phase 1.2 only contains HeliScopeCAGE libraries.</p>
+
+<pre><code class="sh">cut -f 14 *sdrf.txt |
+  grep -v &#39;Library Name&#39; |   # Remove header lines.
+  cut -c 1-4 |
+  sort | uniq -c | sort -n
+</code></pre>
+
+<pre><code>##    1387 CNhs
+</code></pre>
+
+<h2>Examples of use</h2>
+
+<p>Find example that also return sRNA libraries</p>
+
+<pre><code class="bash">source sdrf.sh
+
+SDRFlib pancreas
+</code></pre>
+
+<pre><code>## CNhs11756
+## CNhs10486
+## CNhs11012
+## CNhs11042
+## CNhs11003
+## CNhs10599
+## CNhs10580
+## CNhs11105
+## CNhs11138
+## CNhs11139
+## CNhs11136
+## CNhs11094
+## CNhs11182
+## CNhs11731
+## CNhs11732
+## CNhs11733
+## CNhs11814
+</code></pre>
+
+<pre><code class="bash">source sdrf.sh
+
+for lib in $(SDRFlib pancreas);
+do
+  echo -ne &quot;$lib\t&quot;
+  SDRFdesc $lib
+done
+</code></pre>
+
+<pre><code>## CNhs11756    pancreas, adult, donor1
+## CNhs10486    pancreas, adult
+## CNhs11012    pancreas, embryo E14
+## CNhs11042    pancreas, embryo E15
+## CNhs11003    pancreas, embryo E16
+## CNhs10599    pancreas, embryo E17
+## CNhs10580    pancreas, embryo E18
+## CNhs11105    pancreas, neonate N00
+## CNhs11138    pancreas, neonate N01
+## CNhs11139    pancreas, neonate N02
+## CNhs11136    pancreas, neonate N16
+## CNhs11094    pancreas, neonate N25
+## CNhs11182    pancreas, neonate N30
+## CNhs11731    embryonic pancreas cell line:1B2C6
+## CNhs11732    embryonic pancreas cell line:1C3D3
+## CNhs11733    embryonic pancreas cell line:1C3IKEI
+## CNhs11814    embryonic pancreas cell line:2C6
+</code></pre>
+
+</body>
+
+</html>
