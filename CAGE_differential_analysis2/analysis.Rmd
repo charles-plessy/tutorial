@@ -136,8 +136,12 @@ done | tee DRR014141.tagdust.log
 
 ### Alignment on the rat genome version 4
 
-The following assumes the genome downloaded and indexed for BWA in
-the current directory, using `rn4_male` as a base name.
+The following assumes the genome downloaded and indexed for BWA in the current
+directory, using `rn4_male` as a base name (note that the base name is defined
+by the `-p` option in the command `bwa index`, and that in a lot of
+facility-provided or internet-provided indexes (such as the Illumina
+[iGenomes](http://cufflinks.cbcb.umd.edu/igenomes.html)), the path to give to
+BWA ends in `.fa`.
 
 ```{r align, engine="bash", dependson='tagdust'}
 GENOME=rn4_male
@@ -163,6 +167,10 @@ do
   (rRNAdust -t8 rat_rDNA.fa DRR014141.$ID.bam | samtools view -bS  - 2> /dev/null | sponge DRR014141.$ID.bam) 2>&1 | sed 's/Excluded: //'
 done | tee DRR014141.rdna.log
 ```
+
+Note that _rRNAdust_ has been integrated in the version 2 of _TagDust_,
+available at <http://tagdust.sourceforge.net/>.  This tutorial will be updated
+later accordingly.
 
 ### Alignment statistics
 
