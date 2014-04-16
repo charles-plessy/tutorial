@@ -160,6 +160,14 @@ done
 
 Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
 
+The reason for removing reads matching rRNA sequences is that in most reference
+genomes, the nuclear rRNA genes are not included because they are repeated and
+hard to assemble.  So if the reads originating from rRNA are not filtered out,
+they will align at suboptimal places in the genome that resemble the rRNA, and
+create artificial signal.  In addition, these artefacts can also make the
+alignment files considerably larger, because of the propensy of rRNA sequences
+to match multiple genomic regions, in particular rRNA-derived repeated elements.
+
 ```{r rrnadust, engine="bash", dependson='align'}
 for ID in $( awk '{print $1}' DRR014141.id )
 do
