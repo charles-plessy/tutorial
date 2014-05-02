@@ -47,8 +47,18 @@ bwa index hg19_male.fa
 
 ## Install level1.py 
 
+The following command will download some clustering scripts written in Python.
+They require the `pysam` library, installed above with the `python-pysam`
+package.
+
+The script `level1.py` is then copied in the user's `bin` directory, to make
+it available from the command line.
+
 ```
-wget http://genome.gsc.riken.jp/plessy-20120605/level1.py 
+wget http://genome.gsc.riken.jp/plessy-20130430/PromoterPipeline_20130430.tar.gz
+tar xvfz PromoterPipeline_20130430.tar.gz
+cp PromoterPipeline/level1.py ~/bin
+chmod ugo+x ~/bin/level1.py
 ```
 
 ## Download and install Paraclu
