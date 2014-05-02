@@ -11,7 +11,7 @@ Various tutorials on how to analyse
 These tutorials are designed to be executed on a Linux system's command line
 interface (also called _Terminal_ or _shell_).  I recommend the book _[The Linux
 Command Line][]_, by William E. Shotts, Jr, January 2012, [no starch press][]
-to people not familiar with entering commands on the keybord.
+to people not familiar with entering commands on the keyboard.
 
 [The Linux Command Line]: http://linuxcommand.org/tlcl.php "A Complete Introduction"
 [no starch press]: http://nostarch.com/tlcl.htm "the finest in geek entertainment"
@@ -45,5 +45,31 @@ wget http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz   # downloa
 tar xvf tagdust.tgz   # unpack tagdust
 cd tagdust            # enter the freshly tagdust directory created by tagdust
 make                  # compile the program
-cp tagdust $HOME/bin  # copy tagdust to the 'bin' directory in your home directory
+cp tagdust ~/bin      # copy tagdust to the 'bin' directory in your home directory
 ```
+
+Frequent problems
+-----------------
+
+### Command not found.
+
+It is not enough to compile a program.  The command-line interface needs to
+find them, and by default it does not search in the current work directory.
+
+The standard way to make programs accessible is to add them to one of a set of
+pre-defined directories that are collectively called the _PATH_.  For
+system-wide installations, the directory is usually `/usr/bin`.  For local
+installations by a single user, the directory is usually called `bin`, in the
+home directory, also accessible via the shortcut `~/bin`.  If it does not exist,
+it can be created like any other directory, but it may  be necessary to log out
+and in again in order for the system to recognise this directory in the _PATH_.
+
+In addition, the program needs to have the executable permissions.  These can be
+given with the `chmod` command (see your favorite command-line tutorial), or via
+the file navigator of the desktop graphical interface.
+
+Lastly, it is possible to run a program that is not in the _PATH_.  For this,
+just indicate in which directory it is.  The current directory is always
+aliased to `.`, so to run a program called `myscript` that is in the current
+directory, type `./myscript`.  (The comment above about executable permissions
+still applies).
