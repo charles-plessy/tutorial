@@ -21,8 +21,12 @@ Adapted from
 ## Install programs available in Debian
 
 ```
-sudo apt-get install bedtools bwa devscripts equivs git python-numpy samtools sra-toolkit r-bioc-edger r-cran-rggobi
+sudo apt-get install bedtools bwa python-pysam samtools sra-toolkit r-bioc-edger
 ```
+
+In Debian _Wheezy_ (currently the _stable_ version), the package `python-pysam`
+is only available from the `wheezy-backports` repository.  See
+<http://backports.debian.org/Instructions/> for details.
 
 ## Install tagdust, and remove sequencer artefacts.
 
@@ -41,17 +45,9 @@ cat chr?.fa chr??.fa > hg19_male.fa
 bwa index hg19_male.fa
 ```
 
-## Install pysam for level1.py (trust me)
+## Install level1.py 
 
 ```
-git clone git://anonscm.debian.org/debian-med/pysam.git
-cd pysam
-sudo mk-build-deps -r -i
-debuild -us -uc -b
-cd ..
-sudo dpkg -i python-pysam_*_amd64.deb
-sudo apt-get -f install
-
 wget http://genome.gsc.riken.jp/plessy-20120605/level1.py 
 ```
 
