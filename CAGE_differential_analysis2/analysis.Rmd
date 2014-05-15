@@ -6,13 +6,12 @@ options(width=150)
 Digital expression comparison between nanoCAGE libraries testing variant template-switching oligonucleotides
 ============================================================================================================
 
-This tutorial is an updated version of the supplementary material of the
-manuscript _Comparison of RNA- and LNA-Hybrid Oligonucleotides in
-Template-Switching Reactions_ ([Harbers et al.,
-2013](http://dx.doi.org/10.1186/1471-2164-14-665)), that documented the
-commands run to compare the expression levels of CAGE clusters in libraries
-made with different template-switching oligonucleotides.  It is intended as an
-example on how to compare shallow-sequenced nanoCAGE libraries.
+This tutorial is based on the supplementary material of the manuscript
+_Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching
+Reactions_ ([Harbers et al.,2013](http://dx.doi.org/10.1186/1471-2164-14-665)),
+that documented the commands run to compare the expression levels of CAGE
+clusters in libraries made with different template-switching oligonucleotides.
+It is an example comparison of shallow-sequenced nanoCAGE libraries.
 
 See the main [README](../README.md) for general recommendations on how or what
 to prepare before running this tutorial.
