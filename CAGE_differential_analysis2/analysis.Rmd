@@ -37,10 +37,10 @@ Table of contents
 
 ### Information and download
 
-The `DRR014141` library (`NCms10010` in the original publication)  was made
-with total RNA from rat muscle.  It is comparing template-switching
-oligonucleotides that end in RNA (r), DNA (d) or LNA (l) bases.  The
-comparisons were multiplexed in triplicates.
+The `DRR014141` library (`NCms10010` in the original publication) was made with
+total RNA from rat muscle.  It is comparing template-switching oligonucleotides
+that end in RNA (r), DNA (d) or LNA (l) bases.  The comparisons were
+multiplexed in triplicates.
 
 The data is a single-end MiSeq run (ID: `121012_M00528_0022_AMS2003997-00050`)
 of 4,682,200 reads.  The following commands download (`wget`) the data from
@@ -54,10 +54,10 @@ echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
 
 ### De-multiplexing
 
-The barcodes and sample IDs are associated in a whitespace-delimited file
-called `DRR014141.id` containing the following.  The sample IDs encode the type
-of template-switching oligonucleotide used, which each letter representing the
-chemical nature of the third, second and first nucleotide, from the 3′ end.
+The following command produces a file called `DRR014141.id` that associates the
+barcodes and sample IDs.  The sample IDs encode the type of template-switching
+oligonucleotide used, where each letter representing the chemical nature of the
+third, second and first nucleotide, from the 3′ end.
 
 ```{r create_ID_file, engine="bash"}
 cat <<__ID__ > DRR014141.id
@@ -79,8 +79,8 @@ lll_3	TATAGC
 __ID__
 ```
 
-Samples were demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-The number of extracted reads was collected in a file named `DRR014141.extracted.log`.
+Samples are demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
+The number of extracted reads is collected in a file named `DRR014141.extracted.log`.
 
 ```{r demultiplex, engine="bash", dependson=c('download_material','create_ID_file')}
 bzcat DRR014141.fastq.bz2 |
@@ -91,12 +91,23 @@ bzcat DRR014141.fastq.bz2 |
   tee DRR014141.extracted.log
 ```
 
+### Note on _log_ files.
+
+In this tutorial, the output of some commands is captured with [Unix
+pipes](Pipeline_(Unix)), and transformed into text files where each line is a
+numerical summary (number of reads extracted, filtered, aligned, etc) for a
+given sample, for instance, `extracted	ddd_1	333255`.  The `tee` command
+prints the results while the file is saved.
+
+
 ### Trimming reads to 31 nt
 
-The reads start with 6 bases of barcode, 8 bases of random fingerprint, 4 bases
-of spacer, and 3 base of linker, that are all removed in the following command.
-The reads were also trimmed in 3′ to ensure that the results were comparable
-with a reference HiSeq run (not covered in this document).
+In this version of nanoCAGE, the reads start with 6 bases of barcode, 8 bases
+of random fingerprint, 4 bases of spacer, and 3 base of linker, that are all
+removed in the following command (`-f 22`).  The command also trims in 3′ (`-l
+52`) to ensure that the results were comparable with a reference HiSeq run (not
+covered in this document).  In version `0.0.14` or higher of _FASTX Toolkit_,
+the `-Q33` option is not necessary anymore.
 
 ```{r trim_reads, engine="bash", dependson='demultiplex'}
 for FASTQ in *.fq
@@ -106,6 +117,7 @@ done
 ```
 
 The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) collection.
+
 
 <a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
 ------------------------------------------------------------------------------------------
