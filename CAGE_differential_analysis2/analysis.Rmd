@@ -431,6 +431,11 @@ The following comparisons show the difference (or lack of it) between
 non-filtered and filtered data, and then explore the filtered data in more
 details.
 
+Note on row names: older versions of edgeR will return `NULL` with commands
+such as `rownames(lr.com)`, where `lr.com` is an object returned by the
+`exactTest` command.  As a result, the plots will lack the red-color on the
+differentially expressed clusters.  The solution is to upgrade edgeR.
+
 ### <a name='LNA-RNA'>LNA vs. RNA</a>
 
 ```{r LNA_vs_RNA, dev='png'}
