@@ -49,7 +49,7 @@ of 4,682,200 reads.  The following commands download (`wget`) the data from
 and test its integrity (`md5sum`).
 
 ```{r download_material, engine="bash"}
-wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
+wget --quiet --timestamping ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
 echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
 ```
 
