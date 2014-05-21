@@ -56,17 +56,21 @@ Frequent problems
 It is not enough to compile a program.  The command-line interface needs to
 find them, and by default it does not search in the current work directory.
 
+A very good explanation is in _[The Linux Command Line][]_'s chapter 24,
+section _Script File Location_.  Here is a brief summary.
+
 The standard way to make programs accessible is to add them to one of a set of
 pre-defined directories that are collectively called the _PATH_.  For
 system-wide installations, the directory is usually `/usr/bin`.  For local
 installations by a single user, the directory is usually called `bin`, in the
-home directory, also accessible via the shortcut `~/bin`.  If it does not exist,
+_home_ directory, also accessible via the shortcut `~/bin`.  If it does not exist,
 it can be created like any other directory, but it may  be necessary to log out
 and in again in order for the system to recognise this directory in the _PATH_.
 
-In addition, the program needs to have the executable permissions.  These can be
-given with the `chmod` command (see your favorite command-line tutorial), or via
-the file navigator of the desktop graphical interface.
+In addition, the program needs to have the executable permissions.  These can
+be given with the `chmod` command (see _[The Linux Command Line][]_'s chapter
+24, section _Executable Permissions_.), or via the file navigator of the
+desktop graphical interface.
 
 Lastly, it is possible to run a program that is not in the _PATH_.  For this,
 just indicate in which directory it is.  The current directory is always
