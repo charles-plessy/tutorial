@@ -7,6 +7,7 @@ Various tutorials on how to analyse
  * [Deep-RACE](./Deep-RACE1/Deep-RACE1.md) (work in progress)
  * [CAGE differential analysis 1](./CAGE_differential_analysis1/analysis.md) (work in progress)
  * [CAGE differential analysis 2](./CAGE_differential_analysis2/analysis.md)
+ * [Simple use of FANTOM5 SDRF files](./FANTOM5_SDRF_files/sdrf.md)
 
 These tutorials are designed to be executed on a Linux system's command line
 interface (also called _Terminal_ or _shell_).  I recommend the book _[The Linux
