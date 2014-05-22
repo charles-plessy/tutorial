@@ -4,13 +4,36 @@ knitr::opts_chunk$set(cache=TRUE)
 knitr::opts_knit$set(verbose = TRUE)
 ```
 
-Simplistic interrogation of FANTOM5's SDRF files
-================================================
+Simple interrogation of FANTOM5's SDRF files
+============================================
+
+Some of the FANTOM5 metadata is distributed in the _Sample and Data
+Relationship Format_ ([SDRF](https://en.wikipedia.org/wiki/SDRF)) format along
+with the alignment files in <http://fantom.gsc.riken.jp/5/datafiles/>.  Each
+line describes one FANTOM5 library, except the first line that is a header.
+
+Here is one example downloaded from the FANTOM5 website.
+
+```{r sdrf_Example_Full, engine="sh", comment=NA}
+curl http://fantom.gsc.riken.jp/5/datafiles/phase1.2/basic/human.cell_line.LQhCAGE/00_human.cell_line.LQhCAGE.hg19.assay_sdrf.txt
+```
+
+As you see there are long lines with multiple fields.  We will use the
+3<sup>rd</sup> (`Comment [sample_name]`) and the 14<sup>th</sup> (`Library
+Name`).  Here is their contents in the above example.
+
+```{r sdrf_Example_Fields, engine="sh", comment=NA}
+curl http://fantom.gsc.riken.jp/5/datafiles/phase1.2/basic/human.cell_line.LQhCAGE/00_human.cell_line.LQhCAGE.hg19.assay_sdrf.txt | cut -f 3,14
+``` 
 
 Simple shell functions to return or query library IDs
 -----------------------------------------------------
 
-should also work with $F5 pointed to the full mirror ?
+The file `sdrf.sh` distributed here defines two simple shell functions,
+`SDRFlib` and `SDRFdesc`.  These functions expect the FANTOM5 SDRF files to be
+in the current directory or in a directory indicated by the environment
+variable `F5`.  In the examples later, we load these functions with the command
+`source sdrf.sh`.
 
 ```{r, sdrf_show_functions, engine="sh", cache=FALSE, comment=NA}
 cat sdrf.sh
@@ -19,6 +42,10 @@ cat sdrf.sh
 Download the SDRF files
 -----------------------
 
+The FANTOM5 data is organised in multiple subdirectories, each containing a
+single SDRF file.  Here, we will download all the SDRF files in a single
+directory.
+
 ```{r sdrf_lftp, engine="sh"}
 PHASE='phase1.2'
 echo 'mget */*sdrf.txt' |
@@ -26,10 +53,11 @@ echo 'mget */*sdrf.txt' |
 wc -l *sdrf.txt
 ```
 
-_Note: the SDRF files have one header line, so the total number of libraries is not the total number of lines._
+_Note: the SDRF files have one header line, so the total number of libraries is
+not the total number of lines._
 
-Library names are in column 14 and start with `CNhs` for HeliScopeCAGE
-libraries.  Phase 1.2 only contains HeliScopeCAGE libraries.
+Library names (column 14) start with `CNhs` for HeliScopeCAGE libraries.  Phase
+1.2 only contains HeliScopeCAGE libraries.
 
 ```{r sdrf_count_libraries, engine="sh"}
 cut -f 14 *sdrf.txt |
@@ -41,13 +69,16 @@ cut -f 14 *sdrf.txt |
 Examples of use
 ---------------
 
-Find example that also return sRNA libraries
+Find all libraries with _pancreas_ in their description.
 
 ```{r sdrf_SDRFlib_example, engine="bash"}
 source sdrf.sh
 
 SDRFlib pancreas
 ```
+
+Find the library name of all the libraries with _pancreas_ in their
+description.
 
 ```{r sdrf_SDRFdesc_example, engine="bash"}
 source sdrf.sh
@@ -59,3 +90,11 @@ do
 done
 ```
 
+Conclusion
+----------
+
+We will use these functions to get list the name of all human and mouse FANTOM5
+libraries in the next tutorial.
+
+Note also that there is more metadata and more expressive ways to interrogate
+it, see <http://fantom.gsc.riken.jp/views/> for details.
