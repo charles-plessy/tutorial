@@ -122,10 +122,10 @@ The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) 
 <a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
 ------------------------------------------------------------------------------------------
 
-### Removal of artifacts with TagDust
+### Removal of artifacts with TagDust 2
 
-Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-and install it in the user's path.  See the main [README](../README.md) for details.
+Download [TagDust 2](http://sourceforge.net/projects/tagdust/) and install it
+in the user's path.  See its README file for details.
 
 ```{r tagdust, engine="bash", dependson='trim_reads'}
 cat > tagdust.fa <<__TagDust__
