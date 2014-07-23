@@ -52,12 +52,14 @@ wget --quiet --timestamping ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA
 echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
 ```
 
-### De-multiplexing
+### Sample names and barcodes
 
 The following command produces a file called `DRR014141.id` that associates the
-barcodes and sample IDs.  The sample IDs encode the type of template-switching
-oligonucleotide used, where each letter representing the chemical nature of the
-third, second and first nucleotide, from the 3′ end.
+barcodes and sample identifiers (_IDs_).  The sample IDs encode the type of
+template-switching oligonucleotide used, where each letter representing the
+chemical nature of the third, second and first nucleotide, from the 3′ end.
+This file will be used to rename the samples after demultiplexing, and to
+iterate over the samples in some steps of the processing.
 
 ```{r create_ID_file, engine="bash"}
 cat <<__ID__ > DRR014141.id
@@ -79,17 +81,100 @@ lll_3	TATAGC
 __ID__
 ```
 
-Samples are demultiplexed with [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-The number of extracted reads is collected in a file named `DRR014141.extracted.log`.
+<a id="demultiplex-trim-filter">Demultiplexing, trimming and filtering</a>
+--------------------------------------------------------------------------
 
-```{r demultiplex, engine="bash", dependson=c('download_material','create_ID_file')}
-bzcat DRR014141.fastq.bz2 |
-  fastx_barcode_splitter.pl --bcfile DRR014141.id --prefix DRR014141. --suffix .fq --bol --exact |
-  sed 1d | cut -f1,2 |
-  perl -ne 'print "extracted\t$_"' |
-  grep -v -e unmatched -e total |
-  tee DRR014141.extracted.log
+Samples are demultiplexed with [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
+version 2.  One key feature of TagDust it has a declarative syntax that enables
+automatic trimming of the linkers and at the same times leaves a written record
+of the read structure.
+
+Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
+and install it in the user's path.  See the main [README](../README.md) for details.
+
+### Removal of artifacts with TagDust
+
+The following command creates a small FASTA file recording the sequence of
+possible sources of artefact reads.
+
+```{r tagdust, engine="bash"}
+cat > tagdust.fa <<__TagDust__
+>TS (before barcode)
+TAGTCGAACTGAAGGTCTCCAGCA
+>RT (without random bases)
+TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
+>empty (TS linker + RT reverse-complemented)
+TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
+__TagDust__
 ```
+
+### Read structure
+
+In this version of nanoCAGE, the reads start with 6 bases of barcode, 8 bases
+of random fingerprint, 4 bases of spacer, and 3 base of linker.  In the syntax
+of TagDust, this translates as follows:
+
+```
+-1 O:N
+-2 B:CACTGA,GCTCTC,TCGCGT,ATCGTG,CACGAT,GTATAC,ACAGAT,CTGACG,GAGTGA,AGTAGC,GCTGCA,TCGAGC,ATCATA,CGATGA,TATAGC
+-3 F:NNNNNNNN
+-4 S:TATAGGG
+-5 R:N
+```
+
+To avoid manual errors, the list of barcodes can be generated with the
+following command, that takes the second column of the file `DRR014141.id`,
+replace return characters by commas, and then removes the final comma.  The
+`echo` command is here to ease the display of the result.
+
+```
+awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//' ; echo
+```
+
+### Run TagDust
+
+This will take time.
+
+```
+BARCODES=$(awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//')
+tagdust -t8 -ref tagdust.fa -1 O:N -2 B:$BARCODES -3 F:NNNNNNNN -4 S:TATAGGG -5 R:N -l . -o DRR014141 DRR014141.fastq.bz2
+```
+
+### Note on FASTX-toolkit
+
+Before TagDust 2 was written, we were using [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
+For the record, here is an example of command.
+
+```
+bzcat DRR014141.fastq.bz2 fastx_barcode_splitter.pl --bcfile DRR014141.id --prefix DRR014141. --suffix .fq --bol --exact
+```
+
+The log output can be converted to a tab-separated format by piping it to shell commands like the following.
+
+```
+sed 1d | cut -f1,2 |
+  perl -ne 'print "extracted\t$_"' |
+  grep -v -e unmatched -e total
+```
+
+Assuming that there are no indels, the linker sequences in the reads
+demultiplexed with `fastx_barcode_splitter.pl` can then be removed with a
+command such as the following.  (In version `0.0.14` or higher of FASTX
+Toolkit, the `-Q33` option is not necessary anymore).
+
+```
+for FASTQ in *.fq
+do
+  fastx_trimmer -f 22 -Q33 < $FASTQ | sponge $FASTQ
+done
+```
+
+The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/)
+collection.  See the main [README](../README.md) for details.
+
+Trimmed reads would then be screened for artefacts with TagDust 1 using the
+same definition as above.
+
 
 ### Note on _log_ files.
 
@@ -99,51 +184,6 @@ numerical summary (number of reads extracted, filtered, aligned, etc) for a
 given sample, for instance, `extracted	ddd_1	333255`.  The `tee` command
 prints the results while the file is saved.
 
-
-### Trimming reads to 31 nt
-
-In this version of nanoCAGE, the reads start with 6 bases of barcode, 8 bases
-of random fingerprint, 4 bases of spacer, and 3 base of linker, that are all
-removed in the following command (`-f 22`).  The command also trims in 3′ (`-l
-52`) to ensure that the results were comparable with a reference HiSeq run (not
-covered in this document).  In version `0.0.14` or higher of _FASTX Toolkit_,
-the `-Q33` option is not necessary anymore.
-
-```{r trim_reads, engine="bash", dependson='demultiplex'}
-for FASTQ in *.fq
-do
-  fastx_trimmer -f 22 -l 52 -Q33 < $FASTQ | sponge $FASTQ
-done
-```
-
-The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/) collection.
-
-
-<a name="artifact-cleaning-and-alignment">Artifact cleaning and alignment of the reads</a>
-------------------------------------------------------------------------------------------
-
-### Removal of artifacts with TagDust
-
-Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-and install it in the user's path.  See the main [README](../README.md) for details.
-
-```{r tagdust, engine="bash", dependson='trim_reads'}
-cat > tagdust.fa <<__TagDust__
->TS (before barcode)
-TAGTCGAACTGAAGGTCTCCAGCA
->RT (without random bases)
-TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
->empty (TS linker + RT reverse-complemented)
-TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
-__TagDust__
-
-for ID in $( awk '{print $1}' DRR014141.id )
-do
-echo -ne "tagdust\t$ID\t"
-tagdust tagdust.fa DRR014141.$ID.fq -o DRR014141.$ID.dusted.fastq 2>&1 |
-  grep -e rejected | cut -f1
-done | tee DRR014141.tagdust.log
-```
 
 ### Alignment on the rat genome version 4
 
