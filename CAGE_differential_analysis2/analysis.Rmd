@@ -98,7 +98,7 @@ The following command creates a small FASTA file recording the sequence of
 possible sources of artefact reads.
 
 ```{r tagdust, engine="bash"}
-cat > tagdust.fa <<__TagDust__
+cat > artefacts.fa <<__TagDust__
 >TS (before barcode)
 TAGTCGAACTGAAGGTCTCCAGCA
 >RT (without random bases)
@@ -130,6 +130,27 @@ replace return characters by commas, and then removes the final comma.  The
 ```
 awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//' ; echo
 ```
+
+### Filter reads aligning to rDNA
+
+Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
+
+The reason for removing reads matching rRNA sequences is that in most reference
+genomes, the nuclear rRNA genes are not included because they are repeated and
+hard to assemble.  So if the reads originating from rRNA are not filtered out,
+they will align at suboptimal places in the genome that resemble the rRNA, and
+create artificial signal.  In addition, these artefacts can also make the
+alignment files considerably larger, because of the propensy of rRNA sequences
+to match multiple genomic regions, in particular rRNA-derived repeated elements.
+
+TagDust 2 uses a single input file for defining artefacts and reference
+sequences to eliminate (rRNA, spikes, …).  Here there are two (`artefacts.fa` and
+`rat_rDNA.fa`), so let's merge them with the `cat` command.
+
+```{r tagdust_ref, engine="bash"}
+cat artefacts.fa rat_rDNA.fa > tagdust.fa
+```
+
 
 ### Run TagDust
 
@@ -221,31 +242,6 @@ remember that the absence of signal is not a proof for the absence of
 expression..
 
 
-### Filter reads aligning to rDNA with rRNAdust
-
-`rRNAdust` is available in the supplementary material at <http://genome.gsc.riken.jp/plessy-20130430/rRNAdust_1.02.tar.gz>.
-
-Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
-
-The reason for removing reads matching rRNA sequences is that in most reference
-genomes, the nuclear rRNA genes are not included because they are repeated and
-hard to assemble.  So if the reads originating from rRNA are not filtered out,
-they will align at suboptimal places in the genome that resemble the rRNA, and
-create artificial signal.  In addition, these artefacts can also make the
-alignment files considerably larger, because of the propensy of rRNA sequences
-to match multiple genomic regions, in particular rRNA-derived repeated elements.
-
-```{r rrnadust, engine="bash", dependson='align'}
-for ID in $( awk '{print $1}' DRR014141.id )
-do
-  echo -ne "rdna\t$ID\t"
-  (rRNAdust -t8 rat_rDNA.fa DRR014141.$ID.bam | samtools view -bS  - 2> /dev/null | sponge DRR014141.$ID.bam) 2>&1 | sed 's/Excluded: //'
-done | tee DRR014141.rdna.log
-```
-
-Note that _rRNAdust_ has been integrated in the version 2 of _TagDust_,
-available at <http://tagdust.sourceforge.net/>.  This tutorial will be updated
-later accordingly.
 
 ### Alignment statistics
 
