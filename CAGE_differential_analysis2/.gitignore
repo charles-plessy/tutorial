@@ -5,9 +5,5 @@
 *.fq
 *.log
 cache/
-rn4_male.amb
-rn4_male.ann
-rn4_male.bwt
-rn4_male.fa
-rn4_male.pac
-rn4_male.sa
+rn4_male.*
+Rnor_5.0.70.*
