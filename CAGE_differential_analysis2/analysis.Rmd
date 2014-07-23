@@ -186,25 +186,40 @@ given sample, for instance, `extracted	ddd_1	333255`.  The `tee` command
 prints the results while the file is saved.
 
 
-### Alignment on the rat genome version 4
+### Alignment on the rat genome version 5
 
-The following assumes the genome downloaded and indexed for BWA in the current
-directory, using `rn4_male` as a base name (note that the base name is defined
+The following assumes genome downloaded and indexed for BWA in the current
+directory, using `Rnor_5.0.70` as a base name (note that the base name is defined
 by the `-p` option in the command `bwa index`, and that in a lot of
 facility-provided or internet-provided indexes (such as the Illumina
 [iGenomes](http://cufflinks.cbcb.umd.edu/igenomes.html)), the path to give to
 BWA ends in `.fa`.
 
+For each demultiplexed samples, the commands below will align the reads (this
+is a two-step process with BWA), and save the result in sorted BAM format by
+sending the output of BWA to `samtools` commands via Unix pipes.
+
 ```{r align, engine="bash", dependson='tagdust'}
-GENOME=rn4_male
-for FQ in *.dusted.fastq
+GENOME=Rnor_5.0.70
+for FQ in DRR014141_BC_*.fq
 do
   bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
   bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
     samtools view -uS - |
-    samtools sort - $(basename $FQ .dusted.fastq)
+    samtools sort - $(basename $FQ .fq)
 done
 ```
+
+Note that the alignment strategy above is simplistic.  If a read overlaps a
+splice junction, this will be treated as mismatches and with more than 3 the
+read will not be aligned.  This causes promoters with very short exons to
+become undetectable.  On the other hand, if reads were systematically to solve
+that problem, more reads would align to multiple positions.  Altogether with
+either choice, most known genes are unaffected.  A robust solution to that
+problem is therefore beyond the scope of that tutorial, but it is important to
+remember that the absence of signal is not a proof for the absence of
+expression..
+
 
 ### Filter reads aligning to rDNA with rRNAdust
 
