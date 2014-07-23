@@ -42,9 +42,9 @@ program made in the C programming language can be installed through the
 cd                    # move back to the home directory
 mkdir -p src          # create the src directory if it did not exist.
 cd src                # enter the src directory
-wget http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz   # download tagdust
-tar xvf tagdust.tgz   # unpack tagdust
-cd tagdust            # enter the freshly tagdust directory created by tagdust
+wget http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz   # download TagDust
+tar xvf tagdust.tgz   # unpack TagDust
+cd tagdust            # enter the freshly tagdust directory created by TagDust
 make                  # compile the program
 cp tagdust ~/bin      # copy tagdust to the 'bin' directory in your home directory
 ```
@@ -78,3 +78,29 @@ just indicate in which directory it is.  The current directory is always
 aliased to `.`, so to run a program called `myscript` that is in the current
 directory, type `./myscript`.  (The comment above about executable permissions
 still applies).
+
+### What is that sponge ?
+
+`sponge` is a command from the [moreutils](http://joeyh.name/code/moreutils/)
+collection, that I use frequently.  On Debian systems, it is easy to install
+via the [moreutils](packages.debian.org/moreutils) package.
+
+The goal of `sponge` is to solve the following problem: when one file is read,
+piped to a command, and the result is redirected to the file itself, the
+contents are not updated as expected, but the file is deleted.  This is because
+at the very beginning of the command, the file receiving the redirection is
+transformed in an empty file before its contents are even read.  For example,
+with a file called `example.fq`:
+
+```
+cat example.fq | fastx_trimmer -f 11 > example.fq          # Deletes the file.
+cat example.fq | fastx_trimmer -f 11 | sponge example.fq   # Trims the first 10 nucleotides.
+```
+
+Without `sponge`, one would need to create a temporary file (which is actually
+what `sponge` does in a more proper way behind the scene).
+
+```
+cat example.fq | fastx_trimmer -f 11 > example.tmp.fq
+mv example.tmp.fq example.fq
+```

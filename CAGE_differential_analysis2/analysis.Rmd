@@ -89,8 +89,8 @@ version 2.  One key feature of TagDust it has a declarative syntax that enables
 automatic trimming of the linkers and at the same times leaves a written record
 of the read structure.
 
-Download [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-and install it in the user's path.  See the main [README](../README.md) for details.
+Download [TagDust 2](http://sourceforge.net/projects/tagdust/) and install it
+in the user's path.  See the main [README](../README.md) for details.
 
 ### Removal of artifacts with TagDust
 
@@ -139,6 +139,7 @@ This will take time.
 BARCODES=$(awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//')
 tagdust -t8 -ref tagdust.fa -1 O:N -2 B:$BARCODES -3 F:NNNNNNNN -4 S:TATAGGG -5 R:N -l . -o DRR014141 DRR014141.fastq.bz2
 ```
+
 
 ### Note on FASTX-toolkit
 
