@@ -284,6 +284,50 @@ do
 done | tee DRR014141.strand-invasion-$ERRORS.log
 ```
 
+### Removal of PCR and optical duplicates.
+
+TODO: explain PCR duplicates (UMI) and optical duplicates (Picard Tools).
+
+Step by step, the commands below do:
+
+ - Read the `DRR014141.id` file that lists sample names and their corresponding barcode;
+ - assign them to the variables `ID` and `BC`;
+ - read the alignments for a given barcode, removing the unaligned reads (`samtools -f4`);
+ - reduce the read names to their fingerprint only, using _perl_ and _regular expressions_;
+ - convert the alignments to BED format with BEDTools.  (The syntax used here is the latest
+   one, `bedtools bamtobed`.  If your version of BEDTools is too old for this, run with the
+   command `bamToBed` instead);
+ - reduce the reads to their 5′ end using a different `awk` command for each strand, and
+   replace all the mapping qualities by the value _255_, so that duplicates will not differ
+   by their mapping quality;
+ - sort the alignments by coordinate and fingerprint name, and keep only one read when
+   multiple ones align to the same place with the same fingerprint;
+ - replace the fingerprint names by the sample name;
+ - count (with `uniq -c`) the number of de-duplicated reads aligning to the same base;
+ - use that count as the score and save the resulting BED file.
+ 
+
+```{r engine="bash"}
+cat DRR014141.id |
+  while read ID BC
+  do
+    samtools view -h -F4 DRR014141_BC_${BC}.bam |
+      perl -pe 's/^.*;FP/\FP/; s/;.*?\t/\t/' |
+      samtools view -Sb - |
+      bedtools bamtobed |
+      awk 'BEGIN{OFS="\t"}{if($6=="+"){print $1,$2,$2+1,$4,"1",$6};if($6=="-"){print $1,$3-1,$3,$4,"1",$6} }' |
+      sort -k1,1 -k2,2n -k3,3n -k 4,4 |
+      uniq |
+      awk -v name=$ID '{OFS="\t"} {$4 = name ; print}' |
+      uniq -c |
+      awk '{OFS="\t"} {print $2, $3, $4, $5, $1, $7}' > DRR014141_${ID}.bed
+  done
+```
+
+TODO: the same, but producing a de-duplicated BAM files, allowing to search for
+strand invaders and cluster with level1.py.
+ 
+
 <a name="clustering">Tag clustering</a>
 ---------------------------------------
 
