@@ -220,10 +220,17 @@ For each demultiplexed samples, the commands below will align the reads (this
 is a two-step process with BWA), and save the result in sorted BAM format by
 sending the output of BWA to `samtools` commands via Unix pipes.
 
+When read names contain a space, BWA truncates the name to everything before
+that space.  This would discard information added by TagDust, so before
+alignment, all FASTQ files are edited to replace spaces by semicolons.  Tip:
+note the `g` at the end of the regular expresssion `s/ /;/g`.  If it were
+forgotten, then only the first space would be replaced.
+
 ```{r align, engine="bash", dependson='tagdust'}
 GENOME=Rnor_5.0.70
 for FQ in DRR014141_BC_*.fq
 do
+  sed -i 's/ /;/g' $FQ
   bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
   bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
     samtools view -uS - |
@@ -240,7 +247,6 @@ either choice, most known genes are unaffected.  A robust solution to that
 problem is therefore beyond the scope of that tutorial, but it is important to
 remember that the absence of signal is not a proof for the absence of
 expression..
-
 
 
 ### Alignment statistics
