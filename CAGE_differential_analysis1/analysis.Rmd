@@ -21,12 +21,13 @@ Adapted from
 ## Install programs available in Debian
 
 ```
-sudo apt-get install bedtools bwa python-pysam samtools sra-toolkit r-bioc-edger
+sudo apt-get install bedtools bwa paraclu python-pysam samtools sra-toolkit r-bioc-edger
 ```
 
 In Debian _Wheezy_ (currently the _stable_ version), the package `python-pysam`
 is only available from the `wheezy-backports` repository.  See
-<http://backports.debian.org/Instructions/> for details.
+<http://backports.debian.org/Instructions/> for details.  The pacakge `paraclu`
+is also only disponible in `unstable` at the moment.
 
 ## Install tagdust, and remove sequencer artefacts.
 
@@ -59,13 +60,6 @@ wget http://genome.gsc.riken.jp/plessy-20130430/PromoterPipeline_20130430.tar.gz
 tar xvfz PromoterPipeline_20130430.tar.gz
 cp PromoterPipeline/level1.py ~/bin
 chmod ugo+x ~/bin/level1.py
-```
-
-## Download and install Paraclu
-
-```
-wget http://www.cbrc.jp/paraclu/archive/paraclu-9.zip
-(cd paraclu-9/ && make)
 ```
 
 # Download HeliScopeCAGE data from SRA.
