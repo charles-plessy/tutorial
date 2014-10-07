@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Normalisation of CAGE data by sub-sampling</title>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>Normalisation of CAGE data by sub-sampling</h1>
+
+<p>The number of different genes detected when sequencing a transcriptome library
+increases slower and slower as reads are added: by definition the first read is
+always new; the second has high chances to be different from the first, etc.,
+but after millions of them each read will have increasing chances to be
+identical to another read already sequenced.  The consequence of this is that
+analysing the same library sequenced <em>deeply</em>, for instance on HiSeq, or
+<em>shallowly</em>, for instance on MiSeq, will not yield the same result in terms of
+gene discovery, etc.</p>
+
+<p>When comparing libraries it can be useful to normalise them to the same
+<em>depth</em>, that is, to use the same number of reads for each library.  There are
+mainly two ways: either input a fixed number of reads in the alignment
+pipeline, or sub-sample a fixed number of alignments after using all the reads.
+This tutorial shows how do the second solution for CAGE data using <code>R</code>.  It is
+related to the analysis presented in the supplementary note number 4 of the
+FANTOM 5 paper (<a href="http://dx.doi.org/10.1038/nature13182" title="Forrest et al., 2014">Forrest <em>et al.</em>, 2014</a>)</p>
+
+<p>See the main <a href="../README.md">README</a> for general recommendations on how or what
+to prepare before running this tutorial.</p>
+
+<p>Busy people familiar with CAGE and R can skip the tutorial and read the manual
+of the <code>rrarefy</code> command of the <code>vegan</code> package, which does all the work.</p>
+
+<h2><a id="data-prep">Data download and preparation</a></h2>
+
+<h3>Information and download</h3>
+
+<p>The data downloaded here is the count of CAGE tags in the FANTOM5 CAGE peaks
+for all the <em>Phase 1</em> libraries of the FANTOM 5 project.  See the <a href="http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/00_readme.txt">README</a>
+file for more information on that file</p>
+
+<pre><code class="bash">wget --quiet --timestamping http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_counts.osc.txt.gz
+echo &quot;6be129d01ce86f3d9fdb3cf26ea3e5ac  hg19.cage_peak_counts.osc.txt.gz&quot; | md5sum -c
+</code></pre>
+
+<pre><code>## hg19.cage_peak_counts.osc.txt.gz: OK
+</code></pre>
+
+<h3>Data loading and preparation in R</h3>
+
+<p>The table is in <a href="http://sourceforge.net/projects/osctf/">Order-Switchable Columns</a> format.  The <code>read.table</code>
+command in R will automatically discard its comment lines, set up column names
+with the <code>header=TRUE</code> option and row names with the <code>row.names=1</code> option.</p>
+
+<p>The table is large: so loading the table will take time…</p>
+
+<pre><code class="r">osc &lt;- read.table(&#39;hg19.cage_peak_counts.osc.txt.gz&#39;, row.names=1, header=TRUE)
+dim(osc)
+</code></pre>
+
+<pre><code>## [1] 184828    889
+</code></pre>
+
+<p>The name of the libraries are long because they contain a plain English
+description of their contents.  We will shorten them to their identifier.  For
+example, <code>counts.Adipocyte%20-%20breast%2c%20donor1.CNhs11051.11376-118A8</code>
+becomes <code>CNhs11051</code>.  The association can be re-made using <a href="../FANTOM5_SDRF_files/">FANTOM5 SDRF
+files</a>.</p>
+
+<pre><code class="r">colnames(osc) &lt;- regmatches(colnames(osc), regexpr(&#39;CNhs.....&#39;, colnames(osc)))
+</code></pre>
+
+<p>The first line, <code>01STAT:MAPPED</code>, is special and contains the total number of
+tags for each library.  The sum of tags in each peak is lower than this,
+because some tags are not in peaks.  We will change the value of
+<code>01STAT:MAPPED</code> so that the sum of the columns in our table is the total number
+of reads for each library.</p>
+
+<pre><code class="r">summary(t(osc[&quot;01STAT:MAPPED&quot;,]))
+</code></pre>
+
+<pre><code>##  01STAT:MAPPED     
+##  Min.   :  515670  
+##  1st Qu.: 2514503  
+##  Median : 4275027  
+##  Mean   : 4803336  
+##  3rd Qu.: 6532804  
+##  Max.   :16059002
+</code></pre>
+
+<pre><code class="r">osc[&#39;01STAT:MAPPED&#39;,] &lt;- osc[&#39;01STAT:MAPPED&#39;,] - colSums(osc[-grep(&#39;01STAT:MAPPED&#39;, rownames(osc)),])
+summary(colSums(osc), digits=10)
+</code></pre>
+
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+##   515670  2514503  4275027  4803336  6532804 16059002
+</code></pre>
+
+<h3>Number of peaks detected and total number of tags, part 1</h3>
+
+<p>Let&#39;s see now how many CAGE peaks are detected per library.  The command <code>osc &gt;
+0</code> produce a data frame containing <code>TRUE</code> where a tag count was higher than zero,
+and <code>FALSE</code> otherwise.  In <code>R</code>, since <code>TRUE</code> equals 1 and <code>FALSE</code> equals 0, the
+<code>colSums</code> command will then count the detected peaks.</p>
+
+<pre><code class="r">summary(colSums(osc &gt; 0), digits=10)
+</code></pre>
+
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   25325   47212   55771   55880   63096  114665
+</code></pre>
+
+<p>There are large variations in the number of peaks detected.  Let&#39;s take the example
+of subcutaneous adipocytes (libraries <a href="http://fantom.gsc.riken.jp/5/sstar/FF:11259-116F8" title="Adipocyte - subcutaneous, donor1">CNhs12494</a>, <a href="http://fantom.gsc.riken.jp/5/sstar/FF:11336-117F4" title="Adipocyte - subcutaneous, donor2">CNhs11371</a> and <a href="http://fantom.gsc.riken.jp/5/sstar/FF:11408-118E4" title="Adipocyte - subcutaneous, donor3">CNhs12017</a>).</p>
+
+<pre><code class="r">numberOfPeaks &lt;- colSums(osc &gt; 0)
+numberOfTags &lt;- colSums(osc)
+adipocytes &lt;- c(&#39;CNhs12494&#39;, &#39;CNhs11371&#39;, &#39;CNhs12017&#39;)
+numberOfPeaks[adipocytes]
+</code></pre>
+
+<pre><code>## CNhs12494 CNhs11371 CNhs12017 
+##     26353     38773     50976
+</code></pre>
+
+<pre><code class="r">numberOfTags[adipocytes]
+</code></pre>
+
+<pre><code>## CNhs12494 CNhs11371 CNhs12017 
+##    535250   1384056   4224299
+</code></pre>
+
+<p>Do we see more peaks just because there were more tags ?</p>
+
+<h3>Sub-sampling</h3>
+
+<p>Here, we will remove tags from the data until each library has the same number of tags,
+that is, we will normalise the <em>sequencing depth</em> on the most <em>shallow</em> library.</p>
+
+<p>We will use the <code>rrarefy</code> command of the <a href="http://vegan.r-forge.r-project.org/">vegan</a> package.
+Unlike most R commands that work on data frames, this command uses rows by default, so we will
+transpose the table, sub-sample it, and transpose it again.</p>
+
+<p>The sub-sampling removes tags randomly, so each time it is run it will never
+produce exactly the same result.  However, highly expressed peaks will stay
+highly expressed, etc.  For this tutorial, the computation is made identical
+across runs by setting the random number seed with the <code>set.seed</code> command (and
+resetting it with <code>rm(.Random.seed)</code>).  <em>Note: do not use <code>set.seed()</code> in your
+project if you do not understand well the consequences.</em></p>
+
+<pre><code class="r">library(vegan)
+</code></pre>
+
+<pre><code>## Loading required package: permute
+## Loading required package: lattice
+## This is vegan 2.0-10
+</code></pre>
+
+<pre><code class="r">set.seed(1)
+osc.sub &lt;- t(rrarefy(t(osc), min(numberOfTags)))
+rm(.Random.seed)
+summary(colSums(osc.sub), digits=10)
+</code></pre>
+
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  515670  515670  515670  515670  515670  515670
+</code></pre>
+
+<p>That is all !  Now all the libraries contain the same number of tags.</p>
+
+<h3>Number of peaks detected and total number of tags, part 2</h3>
+
+<pre><code class="r">colSums(osc.sub &gt; 0)[adipocytes]
+</code></pre>
+
+<pre><code>## CNhs12494 CNhs11371 CNhs12017 
+##     25955     27756     26558
+</code></pre>
+
+<pre><code class="r">colSums(osc.sub)[adipocytes]
+</code></pre>
+
+<pre><code>## CNhs12494 CNhs11371 CNhs12017 
+##    515670    515670    515670
+</code></pre>
+
+<p>The number of detected peaks is now very similar between the three biological replicates !</p>
+
+<h3>Second part n construction…</h3>
+
+<p>The second part with sub-sampling both dimensions of expression tables will be
+added later.</p>
+
+</body>
+
+</html>
