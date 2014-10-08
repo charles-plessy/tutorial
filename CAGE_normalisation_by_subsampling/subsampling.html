@@ -199,24 +199,23 @@ analysing the same library sequenced <em>deeply</em>, for instance on HiSeq, or
 gene discovery, etc.  See <a href="http://davetang.org/muse/2013/07/10/how-deep-should-we-sequence/" title="How deep should we sequence ?">Dave Tang&#39;s blog</a> for a longer discussion on
 sequencing depth.</p>
 
-<p>When comparing libraries on properties that are not invariant with sequencing
-depth, it can be useful to normalise them to the same <em>depth</em>, that is, to use
-the same number of reads for each library.  There are mainly two ways: either
-input a fixed number of reads in the alignment pipeline, or sub-sample a fixed
-number of alignments after using all the reads.  This tutorial shows how do the
-second solution for CAGE data using <code>R</code>.  It is related to the analysis
-presented in the supplementary note number 4 of the FANTOM 5 paper (<a href="http://fantom.gsc.riken.jp">Forrest
-<em>et al.</em>, 2014</a>)</p>
-
-<p>See the main <a href="../README.html">README</a> for general recommendations on how or what
-to prepare before running this tutorial.</p>
+<p>This tutorial is about comparing libraries on properties that are not invariant
+with sequencing depth.  The solution presented here is to normalise the
+libraries to the same <em>depth</em>, that is, to use the same number of reads for
+each library.  There are mainly two ways: either input a fixed number of reads
+in the alignment pipeline, or sub-sample a fixed number of alignments after
+using all the reads.  This tutorial shows how do the second solution for CAGE
+data using <code>R</code>.</p>
 
 <p>Busy people familiar with CAGE and R can skip the tutorial and read the manual
 of the <code>rrarefy</code> command of the <a href="http://vegan.r-forge.r-project.org/">vegan</a> package.</p>
 
-<h2><a id="data-prep">Data download and preparation</a></h2>
+<h2><a id="depth-norm">Sub-sampling <em>libraries</em> at the same depth</a></h2>
 
 <h3>Information and download</h3>
+
+<p>See the main <a href="../README.html">README</a> for general recommendations on how or what
+to prepare before running this tutorial.</p>
 
 <p>The data downloaded here is the count of CAGE tags in the FANTOM5 CAGE peaks
 for all the <em>Phase 1</em> libraries of the <a href="http://fantom.gsc.riken.jp">FANTOM 5 project</a>.  See the
@@ -387,10 +386,15 @@ normalisedNumberOfPeaks[adipocytes]
 
 <p>The number of detected peaks is now very similar between the three biological replicates !</p>
 
-<h3>Second part in construction…</h3>
+<h3>Further uses of sub-sampling.</h3>
 
-<p>The second part with sub-sampling both dimensions of expression tables will be
-added later.</p>
+<p>One can also use sub-sampling to compare the expression profile of CAGE peaks,
+normalising for the fact that low-expressed peaks will be found in less
+libraries.  The solution would be asking a question like <em>“what would be the
+profile of a promoter if only 100 reads had aligned to it ?”</em>.  This question
+is related to the supplementary note number 4 of the FANTOM 5 paper (<a href="http://dx.doi.org/10.1038/nature13182" title="Forrest et al., 2014">Forrest
+<em>et al.</em>, 2014</a>), on ubiquitous and tissue-restricted expression, and
+will be the topic of a future tutorial.</p>
 
 </body>
 
