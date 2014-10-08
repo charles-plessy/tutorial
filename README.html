@@ -1,0 +1,35 @@
+<h1 id="tutorials-for-analysing-cage-and-deep-race-data.">Tutorials for analysing CAGE and Deep-RACE data.</h1>
+<p>Various tutorials on how to analyse <a href="https://en.wikipedia.org/wiki/Cap_analysis_gene_expression">CAGE</a> data.</p>
+<ul>
+<li><a href="./Deep-RACE1/Deep-RACE1.html">Deep-RACE</a> (work in progress)</li>
+<li><a href="./CAGE_differential_analysis1/analysis.html">CAGE differential analysis 1</a> (work in progress)</li>
+<li><a href="./CAGE_differential_analysis2/analysis.html">CAGE differential analysis 2</a></li>
+<li><a href="./FANTOM5_SDRF_files/sdrf.html">Simple use of FANTOM5 SDRF files</a></li>
+</ul>
+<p>These tutorials are designed to be executed on a Linux system's command line interface (also called <em>Terminal</em> or <em>shell</em>). I recommend the book <em><a href="http://linuxcommand.org/tlcl.php" title="A Complete Introduction">The Linux Command Line</a></em>, by William E. Shotts, Jr, January 2012, <a href="http://nostarch.com/tlcl.htm" title="the finest in geek entertainment">no starch press</a> to people not familiar with entering commands on the keyboard.</p>
+<p>The programs used are assumed to be installed in advance. On the <a href="http://www.debian.org">Debian</a> operating system, many of them (BWA, SAMtools, BEDTools, ...) are available pre-packaged and will be installed (altogether with many other programs) by the command <code>apt-get install med-bio</code>.</p>
+<p>Other software have to be downloaded and installed by hand. Place them in the <code>bin</code> directory in your home directory, and set their executable property in order to use them. If you had to create the <code>bin</code> directory, it will only be taken into account at your next connection (see <a href="http://stackoverflow.com/questions/16366986/adding-bin-directory-in-your-path">stackoverflow</a> for alternatives).</p>
+<p>Here is for example how to download, compile and install the <a href="http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz">tagdust</a> software. By convention, we will download the software in a directory called <code>src</code>. <em>Compiling</em> means to produce the executable program suitable for your computer, using the <a href="https://en.wikipedia.org/wiki/Source_code">source code</a> that was downloaded. On Debian systems, the programs necessary for compiling a program made in the C programming language can be installed through the <code>build-essential</code> package.</p>
+<pre><code>cd                    # move back to the home directory
+mkdir -p src          # create the src directory if it did not exist.
+cd src                # enter the src directory
+wget http://genome.gsc.riken.jp/osc/english/software/src/tagdust.tgz   # download TagDust
+tar xvf tagdust.tgz   # unpack TagDust
+cd tagdust            # enter the freshly tagdust directory created by TagDust
+make                  # compile the program
+cp tagdust ~/bin      # copy tagdust to the &#39;bin&#39; directory in your home directory</code></pre>
+<h2 id="frequent-problems">Frequent problems</h2>
+<h3 id="command-not-found.">Command not found.</h3>
+<p>It is not enough to compile a program. The command-line interface needs to find them, and by default it does not search in the current work directory.</p>
+<p>A very good explanation is in <em><a href="http://linuxcommand.org/tlcl.php" title="A Complete Introduction">The Linux Command Line</a></em>'s chapter 24, section <em>Script File Location</em>. Here is a brief summary.</p>
+<p>The standard way to make programs accessible is to add them to one of a set of pre-defined directories that are collectively called the <em>PATH</em>. For system-wide installations, the directory is usually <code>/usr/bin</code>. For local installations by a single user, the directory is usually called <code>bin</code>, in the <em>home</em> directory, also accessible via the shortcut <code>~/bin</code>. If it does not exist, it can be created like any other directory, but it may be necessary to log out and in again in order for the system to recognise this directory in the <em>PATH</em>.</p>
+<p>In addition, the program needs to have the executable permissions. These can be given with the <code>chmod</code> command (see <em><a href="http://linuxcommand.org/tlcl.php" title="A Complete Introduction">The Linux Command Line</a></em>'s chapter 24, section <em>Executable Permissions</em>.), or via the file navigator of the desktop graphical interface.</p>
+<p>Lastly, it is possible to run a program that is not in the <em>PATH</em>. For this, just indicate in which directory it is. The current directory is always aliased to <code>.</code>, so to run a program called <code>myscript</code> that is in the current directory, type <code>./myscript</code>. (The comment above about executable permissions still applies).</p>
+<h3 id="what-is-that-sponge">What is that sponge ?</h3>
+<p><code>sponge</code> is a command from the <a href="http://joeyh.name/code/moreutils/">moreutils</a> collection, that I use frequently. On Debian systems, it is easy to install via the <a href="packages.debian.org/moreutils">moreutils</a> package.</p>
+<p>The goal of <code>sponge</code> is to solve the following problem: when one file is read, piped to a command, and the result is redirected to the file itself, the contents are not updated as expected, but the file is deleted. This is because at the very beginning of the command, the file receiving the redirection is transformed in an empty file before its contents are even read. For example, with a file called <code>example.fq</code>:</p>
+<pre><code>cat example.fq | fastx_trimmer -f 11 &gt; example.fq          # Deletes the file.
+cat example.fq | fastx_trimmer -f 11 | sponge example.fq   # Trims the first 10 nucleotides.</code></pre>
+<p>Without <code>sponge</code>, one would need to create a temporary file (which is actually what <code>sponge</code> does in a more proper way behind the scene).</p>
+<pre><code>cat example.fq | fastx_trimmer -f 11 &gt; example.tmp.fq
+mv example.tmp.fq example.fq</code></pre>

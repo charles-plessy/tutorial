@@ -66,7 +66,7 @@ The name of the libraries are long because they contain a plain English
 description of their contents.  We will shorten them to their identifier.  For
 example, `counts.Adipocyte%20-%20breast%2c%20donor1.CNhs11051.11376-118A8`
 becomes `CNhs11051`.  The association can be re-made using [FANTOM5 SDRF
-files](../FANTOM5_SDRF_files/).
+files](../FANTOM5_SDRF_files/sdrf.md).
 
 ```{r column_names, dependson="load_data"}
 colnames(osc) <- regmatches(colnames(osc), regexpr('CNhs.....', colnames(osc)))
