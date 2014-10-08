@@ -152,7 +152,7 @@ That is all !  Now all the libraries contain the same number of tags.
 
 ### Number of peaks detected and total number of tags, part 2
 
-```{r peak_count2, dependson="stat_mapped", dev="svg"}
+```{r peakNumberBarplot, dependson="stat_mapped", dev="svg"}
 normalisedNumberOfPeaks <- colSums(osc.sub > 0)
 normalisedNumberOfPeaks[adipocytes]
 colSums(osc.sub)[adipocytes]
