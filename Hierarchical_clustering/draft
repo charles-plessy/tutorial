@@ -1,0 +1,15 @@
+Possible points to mention:
+
+ - Dendrograms in R: heatmap(), hclust(), ...
+
+ - Notion of distance; Pearson correlation is not a distance.
+
+ - Robustness of distance regarding differences of sequencing depth.
+
+ - Vertical scale in dendrograms: what it means.
+
+ - How to use the dist() function.  When to use t() on the input.
+
+ - Cluster the data direclty, do not cluster a correlation matrix by accident.
+
+ - Bootstrap values with pvclust(); parallel calculation.
