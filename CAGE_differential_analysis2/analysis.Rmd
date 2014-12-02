@@ -133,7 +133,11 @@ awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//' ; echo
 
 ### Filter reads aligning to rDNA
 
-Download the reference rRNA sequences at <http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> and <http://www.ncbi.nlm.nih.gov/gene/170603>, and save them in a file called `rat_rDNA.fa`.
+Download the reference rRNA sequences at
+<http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> (nuclear rDNA),
+<http://www.ncbi.nlm.nih.gov/gene/170602> (12S mitochondrial rRNA) and
+<http://www.ncbi.nlm.nih.gov/gene/170603> (16S mitochondrial rRNA), and save
+them in a file called `rat_rDNA.fa`.
 
 The reason for removing reads matching rRNA sequences is that in most reference
 genomes, the nuclear rRNA genes are not included because they are repeated and
@@ -158,7 +162,12 @@ This will take time.
 
 ```
 BARCODES=$(awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//')
-tagdust -t8 -ref tagdust.fa -1 O:N -2 B:$BARCODES -3 F:NNNNNNNN -4 S:TATAGGG -5 R:N -l . -o DRR014141 DRR014141.fastq.bz2
+tagdust -t8 -1 O:N -2 B:$BARCODES -3 F:NNNNNNNN -4 S:TATAGGG -5 R:N -l . -o DRR014141 DRR014141.fastq.bz2
+
+for FASTQ in *BC*.fq
+do
+  tagdust -t8 -ref tagdust.fa -l . -o $(basename $FASTQ .fq)_filtered $FASTQ
+done
 ```
 
 
