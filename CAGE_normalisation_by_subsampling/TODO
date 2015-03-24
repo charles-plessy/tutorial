@@ -1,0 +1,11 @@
+ - Find F5 libraries where the rarefaction curves cross (if possible in all
+   replicates).  Use them as examples to show that the scale of subsampling
+   is always arbitrary.
+
+ - Summarise which metrics vary with depth and which are aproximately
+   invariant.  For instance, promoter rate and other annotations are
+   invariant, but gene discovery varies.
+
+ - Give a few thought examples, for example 1 billion identical reads
+   plus one unique read: total number of different reads = 2, but it
+   is very unlikely to find this without sequencing dozens of millions.
