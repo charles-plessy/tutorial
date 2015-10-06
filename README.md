@@ -105,3 +105,6 @@ what `sponge` does in a more proper way behind the scene).
 cat example.fq | fastx_trimmer -f 11 > example.tmp.fq
 mv example.tmp.fq example.fq
 ```
+### How to use Git ?
+
+Have a look at <http://gitreal.codeschool.com/levels/1>.
