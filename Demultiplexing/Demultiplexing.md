@@ -36,10 +36,10 @@ to demultiplex by hand.  The reason for using barcodes in Read 1 instead of
 TruSeq indexes is to allow for multiplexing the library construction at an
 early stage.
 
-{{{
+```
 wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA004/DRA004180/DRX044600/DRR049557_1.fastq.bz2
 wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA004/DRA004180/DRX044600/DRR049557_2.fastq.bz2
-}}}
+```
 
 ## Demultiplex.
 
