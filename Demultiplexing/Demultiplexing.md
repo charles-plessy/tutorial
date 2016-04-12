@@ -60,7 +60,7 @@ tagdust -t 4 -ref tagdust.fa -arch DRR049557.arch -o DRR049557 DRR049557_1.fastq
 
 `-t 4` allocates 4 cores to the task.  You can adapt this number to the machine where you run that command.
 
-The file `tagdust.fa` contains sequences of nanoCAGE linkers and of Nextera sequencing
+The file [`tagdust.fa`](./tagdust.fa) contains sequences of nanoCAGE linkers and of Nextera sequencing
 linkers.
 
 As per Illumina's [ Illumina Adapter Sequences Document
