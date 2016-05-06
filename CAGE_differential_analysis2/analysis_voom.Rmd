@@ -1,473 +1,34 @@
+---
+output: 
+  html_document: 
+    keep_md: yes
+    toc: yes
+---
+
 ```{r echo=FALSE}
 knitr::opts_chunk$set(cache=TRUE)
-options(width=150)
+options(width=100)
 ```
 
-Digital expression comparison between nanoCAGE libraries testing variant template-switching oligonucleotides
-============================================================================================================
+# Digital expression comparison (using voom) between nanoCAGE libraries testing variant template-switching oligonucleotides
 
-This tutorial is based on the supplementary material of the manuscript
-_Comparison of RNA- and LNA-Hybrid Oligonucleotides in Template-Switching
-Reactions_ ([Harbers et al.,2013](http://dx.doi.org/10.1186/1471-2164-14-665)),
-that documented the commands run to compare the expression levels of CAGE
-clusters in libraries made with different template-switching oligonucleotides.
-It is an example comparison of shallow-sequenced nanoCAGE libraries.
+This does the same analysis as in the [main page](../analysis.md), but with `voom` from the [LIMMA](https://www.bioconductor.org/packages/limma) package.  It assumes that the main Rmarkdown file has already been [knitted](http://yihui.name/knitr/).
 
-See the main [README](../README.md) for general recommendations on how or what
-to prepare before running this tutorial.
 
-Table of contents
------------------
+## Load the data.
 
- * [Data download and preparation](#data-prep)
- * [Artifact cleaning and alignment of the reads](#artifact-cleaning-and-alignment)
- * [Tag clustering](#clustering)
- * [Annotation](#annotation)
- * [Preparation for statistical analysis](#r-prep)
- * [Differential representation analysis](#differential-expression)
-   * [LNA vs. RNA](#LNA-RNA)
-   * [RNA vs. DNA](#RNA-DNA)
-   * [DNA vs. LNA](#DNA-LNA)
- * [Output of the results as tables](#make-tables)
- * [Notes on the software](#notes-on-software)
-
-
-<a id="data-prep">Data download and preparation</a>
----------------------------------------------------
-
-### Information and download
-
-The `DRR014141` library (`NCms10010` in the original publication) was made with
-total RNA from rat muscle.  It is comparing template-switching oligonucleotides
-that end in RNA (r), DNA (d) or LNA (l) bases.  The comparisons were
-multiplexed in triplicates.
-
-The data is a single-end MiSeq run (ID: `121012_M00528_0022_AMS2003997-00050`)
-of 4,682,200 reads.  The following commands download (`wget`) the data from
-[DRA](http://trace.ddbj.nig.ac.jp/dra/index.html) (DDBJ's Sequence Read Archive)
-and test its integrity (`md5sum`).
-
-```{r download_material, engine="bash"}
-wget --quiet --timestamping ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA001/DRA001167/DRX012672/DRR014141.fastq.bz2
-echo "b0b3070fbbae0073507234d9048325ff  DRR014141.fastq.bz2" | md5sum -c
-```
-
-### Sample names and barcodes
-
-The following command produces a file called `DRR014141.id` that associates the
-barcodes and sample identifiers (_IDs_).  The sample IDs encode the type of
-template-switching oligonucleotide used, where each letter representing the
-chemical nature of the third, second and first nucleotide, from the 3′ end.
-This file will be used to rename the samples after demultiplexing, and to
-iterate over the samples in some steps of the processing.
-
-```{r create_ID_file, engine="bash"}
-cat <<__ID__ > DRR014141.id
-rrr_1	CACTGA
-rrr_2	GCTCTC
-rrr_3	TCGCGT
-ddd_1	ATCGTG
-ddd_2	CACGAT
-ddd_3	GTATAC
-ddl_1	ACAGAT
-ddl_2	CTGACG
-ddl_3	GAGTGA
-dll_1	AGTAGC
-dll_2	GCTGCA
-dll_3	TCGAGC
-lll_1	ATCATA
-lll_2	CGATGA
-lll_3	TATAGC
-__ID__
-```
-
-<a id="demultiplex-trim-filter">Demultiplexing, trimming and filtering</a>
---------------------------------------------------------------------------
-
-Samples are demultiplexed with [TagDust](http://bioinformatics.oxfordjournals.org/content/25/21/2839)
-version 2.  One key feature of TagDust it has a declarative syntax that enables
-automatic trimming of the linkers and at the same times leaves a written record
-of the read structure.
-
-Download [TagDust 2](http://sourceforge.net/projects/tagdust/) and install it
-in the user's path.  See the main [README](../README.md) for details.
-
-### Removal of artifacts with TagDust
-
-The following command creates a small FASTA file recording the sequence of
-possible sources of artefact reads.
-
-```{r tagdust, engine="bash"}
-cat > artefacts.fa <<__TagDust__
->TS (before barcode)
-TAGTCGAACTGAAGGTCTCCAGCA
->RT (without random bases)
-TAGTCGAACTGAAGGTCTCCGAACCGCTCTTCCGATCT
->empty (TS linker + RT reverse-complemented)
-TATAGGGAGATCGGAAGAGCGGTTCGGAGACCTTCAGTTCGACTA
-__TagDust__
-```
-
-### Read structure
-
-In this version of nanoCAGE, the reads start with 6 bases of barcode, 8 bases
-of random fingerprint, 4 bases of spacer, and 3 base of linker.  In the syntax
-of TagDust, this translates as follows:
-
-```
--1 O:N
--2 B:CACTGA,GCTCTC,TCGCGT,ATCGTG,CACGAT,GTATAC,ACAGAT,CTGACG,GAGTGA,AGTAGC,GCTGCA,TCGAGC,ATCATA,CGATGA,TATAGC
--3 F:NNNNNNNN
--4 S:TATAGGG
--5 R:N
-```
-
-To avoid manual errors, the list of barcodes can be generated with the
-following command, that takes the second column of the file `DRR014141.id`,
-replace return characters by commas, and then removes the final comma.  The
-`echo` command is here to ease the display of the result.
-
-```
-awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//' ; echo
-```
-
-### Filter reads aligning to rDNA
-
-Download the reference rRNA sequences at
-<http://www.ncbi.nlm.nih.gov/nuccore/V01270.1> (nuclear rDNA),
-<http://www.ncbi.nlm.nih.gov/gene/170602> (12S mitochondrial rRNA) and
-<http://www.ncbi.nlm.nih.gov/gene/170603> (16S mitochondrial rRNA), and save
-them in a file called `rat_rDNA.fa`.
-
-The reason for removing reads matching rRNA sequences is that in most reference
-genomes, the nuclear rRNA genes are not included because they are repeated and
-hard to assemble.  So if the reads originating from rRNA are not filtered out,
-they will align at suboptimal places in the genome that resemble the rRNA, and
-create artificial signal.  In addition, these artefacts can also make the
-alignment files considerably larger, because of the propensy of rRNA sequences
-to match multiple genomic regions, in particular rRNA-derived repeated elements.
-
-TagDust 2 uses a single input file for defining artefacts and reference
-sequences to eliminate (rRNA, spikes, …).  Here there are two (`artefacts.fa` and
-`rat_rDNA.fa`), so let's merge them with the `cat` command.
-
-```{r tagdust_ref, engine="bash"}
-cat artefacts.fa rat_rDNA.fa > tagdust.fa
-```
-
-
-### Run TagDust
-
-This will take time.
-
-```
-BARCODES=$(awk '{print $2}' DRR014141.id | perl -pe 's/\n/,/' | sed 's/,$//')
-tagdust -t8 -1 O:N -2 B:$BARCODES -3 F:NNNNNNNN -4 S:TATAGGG -5 R:N -l . -o DRR014141 DRR014141.fastq.bz2
-
-for FASTQ in *BC*.fq
-do
-  tagdust -t8 -ref tagdust.fa -l . -o $(basename $FASTQ .fq)_filtered $FASTQ
-done
-```
-
-
-### Note on FASTX-toolkit
-
-Before TagDust 2 was written, we were using [FASTX-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-For the record, here is an example of command.
-
-```
-bzcat DRR014141.fastq.bz2 fastx_barcode_splitter.pl --bcfile DRR014141.id --prefix DRR014141. --suffix .fq --bol --exact
-```
-
-The log output can be converted to a tab-separated format by piping it to shell commands like the following.
-
-```
-sed 1d | cut -f1,2 |
-  perl -ne 'print "extracted\t$_"' |
-  grep -v -e unmatched -e total
-```
-
-Assuming that there are no indels, the linker sequences in the reads
-demultiplexed with `fastx_barcode_splitter.pl` can then be removed with a
-command such as the following.  (In version `0.0.14` or higher of FASTX
-Toolkit, the `-Q33` option is not necessary anymore).
-
-```
-for FASTQ in *.fq
-do
-  fastx_trimmer -f 22 -Q33 < $FASTQ | sponge $FASTQ
-done
-```
-
-The `sponge` command is from the [moreutils](http://joeyh.name/code/moreutils/)
-collection.  See the main [README](../README.md) for details.
-
-Trimmed reads would then be screened for artefacts with TagDust 1 using the
-same definition as above.
-
-
-### Note on _log_ files.
-
-In this tutorial, the output of some commands is captured with [Unix
-pipes](Pipeline_(Unix)), and transformed into text files where each line is a
-numerical summary (number of reads extracted, filtered, aligned, etc) for a
-given sample, for instance, `extracted	ddd_1	333255`.  The `tee` command
-prints the results while the file is saved.
-
-
-### Alignment on the rat genome version 5
-
-The following assumes genome downloaded and indexed for BWA in the current
-directory, using `Rnor_5.0.70` as a base name (note that the base name is defined
-by the `-p` option in the command `bwa index`, and that in a lot of
-facility-provided or internet-provided indexes (such as the Illumina
-[iGenomes](http://cufflinks.cbcb.umd.edu/igenomes.html)), the path to give to
-BWA ends in `.fa`.
-
-For each demultiplexed samples, the commands below will align the reads (this
-is a two-step process with BWA), and save the result in sorted BAM format by
-sending the output of BWA to `samtools` commands via Unix pipes.
-
-When read names contain a space, BWA truncates the name to everything before
-that space.  This would discard information added by TagDust, so before
-alignment, all FASTQ files are edited to replace spaces by semicolons.  Tip:
-note the `g` at the end of the regular expresssion `s/ /;/g`.  If it were
-forgotten, then only the first space would be replaced.
-
-```{r align, engine="bash", dependson='tagdust'}
-GENOME=Rnor_5.0.70
-for FQ in DRR014141_BC_*.fq
-do
-  sed -i 's/ /;/g' $FQ
-  bwa aln -t8 $GENOME -f $(basename $FQ .dusted.fastq).sai $FQ
-  bwa samse   $GENOME    $(basename $FQ .dusted.fastq).sai $FQ |
-    samtools view -uS - |
-    samtools sort - $(basename $FQ .fq)
-done
-```
-
-Note that the alignment strategy above is simplistic.  If a read overlaps a
-splice junction, this will be treated as mismatches and with more than 3 the
-read will not be aligned.  This causes promoters with very short exons to
-become undetectable.  On the other hand, if reads were systematically to solve
-that problem, more reads would align to multiple positions.  Altogether with
-either choice, most known genes are unaffected.  A robust solution to that
-problem is therefore beyond the scope of that tutorial, but it is important to
-remember that the absence of signal is not a proof for the absence of
-expression..
-
-
-### Alignment statistics
-
-```{r align_stats, engine="bash", dependson='rrnadust'}
-for ID in $( awk '{print $1}' DRR014141.id )
-do
-  echo -ne "mapped\t$ID\t"
-  (samtools flagstat DRR014141.$ID.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee DRR014141.mapped.log
-```
-
-### Filter out possible strand-invasion tags
-
-Strand invasion was described in [Tang et al, Nucl. Acids Res. (2013) 41
-(3):e44](http://nar.oxfordjournals.org/content/41/3/e44), and is more frequent
-in LNA- or DNA-based template-switching oligonucleotides.
-
-The following commands need an updated version of the `find_strand_invasion.pl`
-that was in Tang et al's supplementary material, where a new `-f` option is
-added, with the same semantics as in `samtools`.  It is available at
-<https://github.com/davetang/23180801>.
-
-
-```{r strand_invasion, engine="bash", dependson='rrnadust'}
-ERRORS=2
-for BAM in DRR014141.???_?.bam
-do
-  find_strand_invasion.pl -f $BAM -g rn4_male.fa -e $ERRORS -s TATA
-done
-for ID in $( awk '{print $1}' DRR014141.id )
-do
-  echo -ne "strand-invasion-$ERRORS\t$ID\t"
-  (samtools flagstat DRR014141.${ID}_nw_${ERRORS}_??????_removed_sorted.bam | grep mapped | grep %) | cut -f1 -d' '
-done | tee DRR014141.strand-invasion-$ERRORS.log
-```
-
-### Removal of PCR and optical duplicates.
-
-TODO: explain PCR duplicates (UMI) and optical duplicates (Picard Tools).
-
-Step by step, the commands below do:
-
- - Read the `DRR014141.id` file that lists sample names and their corresponding barcode;
- - assign them to the variables `ID` and `BC`;
- - read the alignments for a given barcode, removing the unaligned reads (`samtools -f4`);
- - reduce the read names to their fingerprint only, using _perl_ and _regular expressions_;
- - convert the alignments to BED format with BEDTools.  (The syntax used here is the latest
-   one, `bedtools bamtobed`.  If your version of BEDTools is too old for this, run with the
-   command `bamToBed` instead);
- - reduce the reads to their 5′ end using a different `awk` command for each strand, and
-   replace all the mapping qualities by the value _255_, so that duplicates will not differ
-   by their mapping quality;
- - sort the alignments by coordinate and fingerprint name, and keep only one read when
-   multiple ones align to the same place with the same fingerprint;
- - replace the fingerprint names by the sample name;
- - count (with `uniq -c`) the number of de-duplicated reads aligning to the same base;
- - use that count as the score and save the resulting BED file.
- 
-
-```{r engine="bash"}
-cat DRR014141.id |
-  while read ID BC
-  do
-    samtools view -h -F4 DRR014141_BC_${BC}.bam |
-      perl -pe 's/^.*;FP/\FP/; s/;.*?\t/\t/' |
-      samtools view -Sb - |
-      bedtools bamtobed |
-      awk 'BEGIN{OFS="\t"}{if($6=="+"){print $1,$2,$2+1,$4,"1",$6};if($6=="-"){print $1,$3-1,$3,$4,"1",$6} }' |
-      sort -k1,1 -k2,2n -k3,3n -k 4,4 |
-      uniq |
-      awk -v name=$ID '{OFS="\t"} {$4 = name ; print}' |
-      uniq -c |
-      awk '{OFS="\t"} {print $2, $3, $4, $5, $1, $7}' > DRR014141_${ID}.bed
-  done
-```
-
-TODO: the same, but producing a de-duplicated BAM files, allowing to search for
-strand invaders and cluster with level1.py.
- 
-
-<a name="clustering">Tag clustering</a>
----------------------------------------
-
-Level 1 clusters are single-nucleotide resolution data representing the 5′ ends
-of the CAGE tags.  Level 2 clusters are groups of level 1 clusters that are
-separated by 20 or less nucleotides.
-
-The `level1.py` and `level2.py` scripts implement tag clustering like in the
-[FANTOM3](http://fantom.gsc.riken.jp/3/) and
-[FANTOM4](http://fantom.gsc.riken.jp/4/) projects, and are available at
-<http://genome.gsc.riken.jp/plessy-20130430/PromoterPipeline_20130430.tar.gz>.
-
-They output their results in Order Switchable Column
-([OSC](http://sourceforge.net/projects/osctf/)) format, where each line is a
-cluster, and each library gives one column counting the tags in the clusters,
-and another column where the counts are normalised in parts per million.
-
-See also [Carninci et al., Nature Genetics 38
-626-635 (2006)](http://www.nature.com/ng/journal/v38/n6/full/ng1789.html) and
-[Suzuki et al., Nature Genetics 41 553-562
-(2009)](http://www.nature.com/ng/journal/v41/n5/full/ng.375.html) for original
-examples of CAGE tag clustering.
-
-```{r tag_clustering, engine="bash", dependson='strand_invasion'}
-level1.py -o DRR014141.l1.osc.gz -F 516 \
-  DRR014141.???_?.bam \
-  DRR014141.???_?_nw_?_??????_filtered_sorted.bam
-
-level2.py -o DRR014141.l2.osc -t 0 DRR014141.l1.osc.gz
-gzip DRR014141.l2.osc
-```
-
-The resulting file `DRR014141.l1.osc.gz` can be loaded in the
-[Zenbu](http://fantom.gsc.riken.jp/zenbu/) system to browse the alignments on
-the rat genome.
-
-<a name="annotation">Annotation</a>
------------------------------------
-
-### Preparation of the reference files.
-
-Data from ENSEMBL 69 were retrieved via
-[BioMart](http://oct2012.archive.ensembl.org/biomart/martview/), with the following XML query.
-Note that `external_gene_id` is called _Associated Gene Name_ in the web
-interface.
-
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE Query>
-<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "0" count = "" datasetConfigVersion = "0.6" >
-			
-	<Dataset name = "rnorvegicus_gene_ensembl" interface = "default" >
-		<Attribute name = "ensembl_gene_id" />
-		<Attribute name = "ensembl_transcript_id" />
-		<Attribute name = "chromosome_name" />
-		<Attribute name = "strand" />
-		<Attribute name = "external_gene_id" />
-		<Attribute name = "transcript_start" />
-		<Attribute name = "transcript_end" />
-		<Attribute name = "gene_biotype" />
-		<Attribute name = "exon_chrom_start" />
-		<Attribute name = "exon_chrom_end" />
-	</Dataset>
-</Query>
-```
-
-Convert coordinates to gene names
-
-```{r convert_biomart, engine="bash"}
-cat mart_export.txt | 
-  sed -e 1d -e 's|\t\t|\tno_symbol\t|'           |
-  awk '{OFS="\t"} {print $3, $6, $7, $5, 0, $4}' |
-  grep -v ^[JA]                                  |
-  uniq                                           |
-  sed -e 's/-1$/-/'                              \
-      -e 's/1$/+/'                               \
-      -e 's/^/chr/'                              |
-  sort -k1,1 -k2,2n                              \
-  > rn4_male.symbols.bed
-
-
-### Gene symbols
-
-```{r gene_symbols, engine="bash", dependson='convert_biomart'}
-zcat DRR014141.l1.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l1.bed
-zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
-zcat DRR014141.l2.osc.gz | grep -v \# | sed 1d | awk '{OFS="\t"}{print $2, $3, $4, "l2", "1000", $5}' > DRR014141.l2.bed
-
-bedtools intersect -a DRR014141.l2.bed -b rn4_male.symbols.bed -s -loj |
-  awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' | 
-  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.genes
-```
-
-### Repeated elements
-
-Download the repeatmasker track from the [UCSC genome browser](http://genome.ucsc.edu) and save it in a file called `rn4_male.repeatmasker.bed`.
-
-```{r intersect_rmsk, engine="bash"}
-bedtools intersect -a DRR014141.l2.bed -b rn4_male.repeatmasker.bed -s -loj |
-  awk '{OFS="\t"}{print $1":"$2"-"$3$6,$10}' |
-  bedtools groupby -g 1 -c 2 -o distinct > DRR014141.l2.rmsk
-```
-
-<a name="r-prep">Preparation for statistical analysis</a>
----------------------------------------------------------
-
-The following commands are run in the [`R` package for statistical computing](http://www.r-project.org/).
-
-### Load the data.
-
-The oscR library is available at <https://github.com/charles-plessy/oscR>.
-Note that OSCTables can also be loaded with R's `read.table()` command (but pay
-attention to comment and quote characters, etc.).
-
-The following commands load the level 1 and 2 clusters into data frames where
-the column names correspond to the sample IDs defined above.
-
-```{r load_data, dependson='tag_clustering'}
+```{r load_data}
+library(magrittr)
 library(oscR)
 
-l1 <- read.osc("DRR014141.l1.osc.gz", drop.coord=T, drop.norm=T)
 l2 <- read.osc("DRR014141.l2.osc.gz", drop.coord=T, drop.norm=T)
 
-colnames(l1) <- sub('raw.DRR014141.','',colnames(l1))
-colnames(l2) <- sub('raw.DRR014141.','',colnames(l2))
-
-colnames(l1) <- sub('_......_filtered_sorted', '', colnames(l1))
-colnames(l2) <- sub('_......_filtered_sorted', '', colnames(l2))
+colnames(l2) %<>%
+  sub('raw.DRR014141.',          '', .) %>%
+  sub('_......_filtered_sorted', '', .)
 ```
 
-### Organise the data.
+## Organise the data.
 
 The following commands defined convenient shortcuts to manipulates groups of
 libraries. The presence of `nw_2` in the names indicate that strand-invasion
@@ -489,266 +50,157 @@ rrr_nw_2 <- c('rrr_1_nw_2', 'rrr_2_nw_2', 'rrr_3_nw_2')
 all_nw_2 <- c(rrr_nw_2, lll_nw_2, dll_nw_2, ddl_nw_2, ddd_nw_2)
 ```
 
-```{r calculate_means_and_SDs, dependson='load_data'}
-TPM <- function(clusters){
-  clusters.tpm <- data.frame(prop.table(as.matrix(clusters),2) * 1000000)
-  colnames(clusters.tpm) <- colnames(clusters)
-  return(clusters.tpm)
-}
+## Annotation of the results
 
-L2 <- TPM(l2)
-
-L2.means <- data.frame(
-  ddd = apply(L2[,ddd],1,mean),
-  ddl = apply(L2[,ddl],1,mean),
-  dll = apply(L2[,dll],1,mean),
-  lll = apply(L2[,lll],1,mean),
-  rrr = apply(L2[,rrr],1,mean) )
-
-L2.means_nw_2 <- data.frame(
-  ddd = apply(L2[,ddd_nw_2],1,mean),
-  ddl = apply(L2[,ddl_nw_2],1,mean),
-  dll = apply(L2[,dll_nw_2],1,mean),
-  lll = apply(L2[,lll_nw_2],1,mean),
-  rrr = apply(L2[,rrr_nw_2],1,mean) )
-
-L2.sd <- data.frame(
-  ddd = apply(L2[,ddd],1,sd),
-  ddl = apply(L2[,ddl],1,sd),
-  dll = apply(L2[,dll],1,sd),
-  lll = apply(L2[,lll],1,sd),
-  rrr = apply(L2[,rrr],1,sd) )
-```
-
-### Annotation of the results
-
-```{r load_gene_symbols, dependson=c('gene_symbols','intersect_rmsk')}
-genesymbols <- read.table("DRR014141.l2.genes", col.names=c("cluster","symbol"))
+```{r load_gene_symbols}
+genesymbols <- read.table( "DRR014141.l2.genes"
+                         , col.names=c("cluster","symbol"))
 rownames(genesymbols) <- genesymbols$cluster
-genesymbols$rmsk <- read.table("DRR014141.l2.rmsk", col.names=c("cluster","rmsk"))[,'rmsk']
+genesymbols$rmsk <- read.table( "DRR014141.l2.rmsk"
+                              , col.names=c("cluster","rmsk"))[,'rmsk']
+tail(genesymbols)
 ```
 
-<a name="differential-expression">Differential representation analysis<a>
--------------------------------------------------------------------------
+## Differential representation analysis
 
-Statistical comparisons using [edgeR](http://www.bioconductor.org/packages/release/bioc/html/edgeR.html).
+Statistical comparisons using [voom](https://www.bioconductor.org/packages/release/limma).
 
-```{r load_edgeR, message=FALSE, dependson='load_data'}
+```{r voom, dev='png'}
+library(limma)
 library(edgeR)
+
+# In alphabetical order
+samples <- c(ddd, lll, rrr)
+groups  <- c(rep('DNA',3), rep('LNA',3), rep('RNA', 3))
+
+design <- model.matrix(~0+groups)
+colnames(design) <- c("DNA", "LNA", "RNA")
+design
+
+cont.matrix <- makeContrasts( LNA_vs_RNA = LNA - RNA
+                            , RNA_vs_DNA = RNA - DNA
+                            , DNA_vs_LNA = DNA - LNA
+                            , levels = design)
+
+d <-  DGEList( counts = l2[samples]
+             , group  = groups
+             , remove.zeros = TRUE) %>%
+        calcNormFactors %>%
+        voom(design, plot = TRUE)
+
+plotMDS(d)
+
+d %<>% lmFit(design) %>%
+  contrasts.fit(cont.matrix) %>%
+  eBayes
+
+d$genes <- genesymbols[rownames(d),]
+
+topTable(d, n=30)
+summary(decideTests(d))
+decideTests(d) %>% vennDiagram
 ```
 
-The following plots represent:
+### LNA vs RNA
 
- * the multidimensional scaling of the samples,
-   where spatial separation between the two sets of triplicates indicates that the
-   factor that is compared (type of template-switching oligonucleotide) introduces
-   more differences that the simple technical fluctuations,
-
- * the expression levels of the CAGE clusters as a M-A plot, where dots in red are clusters
-   significantly enriched in one type of libraries.  Vertical distance from the
-   horizontal midline represent the amplitude of the differences, and distance on
-   the horizontal axis represents the average strength of expression.
-
-The following comparisons show the difference (or lack of it) between
-non-filtered and filtered data, and then explore the filtered data in more
-details.
-
-Note on row names: older versions of edgeR will return `NULL` with commands
-such as `rownames(lr.com)`, where `lr.com` is an object returned by the
-`exactTest` command.  As a result, the plots will lack the red-color on the
-differentially expressed clusters.  The solution is to upgrade edgeR.
-
-### <a name='LNA-RNA'>LNA vs. RNA</a>
-
-```{r LNA_vs_RNA, dev='png'}
-x     <- DGEList(counts=l2[,c(lll,rrr)], group=c(rep('lll',3),rep('rrr',3)), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-lr <- x
-lr.com <- x.com
-plotMDS(lr)
-plotSmear(lr.com, de.tags=rownames(lr.com)[decideTestsDGE(lr.com) != 0], cex=0.8, main='LNA / RNA', ylab="LNA (bottom) / RNA (top)")
-
-x     <- DGEList(counts=l2[,c(lll_nw_2,rrr_nw_2)], group=c(rep('lll_nw_2',3),rep('rrr_nw_2',3)), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-lr_nw_2 <- x
-lr_nw_2.com <- x.com
-plotMDS(lr_nw_2)
-plotSmear(lr_nw_2.com, de.tags=rownames(lr_nw_2.com)[decideTestsDGE(lr_nw_2.com) != 0], cex=0.8, main='LNA / RNA (filtered)', ylab="LNA (bottom) / RNA (top)")
-```
-
-```{r compare_LNA_RNA_numbers, results="hide"}
-lr_nw_2.up      <- sum(decideTestsDGE(lr_nw_2.com) > 0)
-lr_nw_2.down    <- sum(decideTestsDGE(lr_nw_2.com) < 0)
-```
-
-`r lr_nw_2.up` clusters were enriched and `r lr_nw_2.down` were depleted in RNA
-libraries compared to LNA.  The top 100 stronger fold changes in each direction are shown below.
-
-```{r compare_LNA_RNA, dependson=c('load_gene_symbols' ,'LNA_vs_RNA,'), echo=-1}
-options(width=150)
-# Summary of the top 100 clusters enriched in RNA libraries.
-summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-# Top 15 clusters enriched in RNA libraries.
-merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0)[1:15,], genesymbols[,-1], by=0, sort=FALSE)
-# Summary of the top 100 clusters enriched in LNA libraries.
-summary(merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-```
-
-Positive fold change indicate enrichment in RNA libraries.  The 7SLRNA hits
-are concentrated at the top of the list.  LNA libraries are enriched for hits
-on CAGAGA repeats, even beyond the significance level (FDR) of the statistical
-comparison.
-
-```{r srprna, dependson='load_gene_symbols', dev='svg'}
-library(reshape)
-library(ggplot2)
-srprna <- rownames(subset(genesymbols, rmsk=="7SLRNA"))
-srprna.expression <- melt(L2[srprna, c(rrr_nw_2, ddd_nw_2, lll_nw_2)], measure.vars=c(rrr_nw_2, ddd_nw_2, lll_nw_2))
-for (group in c('ddd','lll','rrr')) srprna.expression[grep(group,srprna.expression$variable),'group'] <- group
-srprna.expression$group <- reorder(factor(srprna.expression$group), srprna.expression$value, function(x) sum(x) * -1)
-qplot(data=srprna.expression, value, reorder(variable, value, sum), xlab="Parts per million", ylab="Library", main="Expression levels of 7SL RNA genes", col=group)
-```
-
-The measured expression of 7SL RNA is strongest in RNA libraries, strong in DNA
-libraries, and weak in LNA libraries.
-
-### <a name='RNA-DNA'>RNA vs. DNA</a>
-
-```{r RNA_vs_DNA, dev='png'}
-x     <- DGEList(counts=l2[,c(rrr,ddd)], group=factor(c(rep("rrr", 3), rep("ddd", 3)), levels=c("rrr", "ddd")), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-rd <- x
-rd.com <- x.com
-plotMDS(x)
-plotSmear(rd.com, de.tags=rownames(rd.com)[decideTestsDGE(rd.com) != 0], cex=0.8, main='RNA / DNA', ylab="RNA (bottom) / LNA (top)")
-
-x     <- DGEList(counts=l2[,c(rrr_nw_2,ddd_nw_2)], group=factor(c(rep("rrr_nw_2", 3), rep("ddd_nw_2", 3)), levels=c("rrr_nw_2", "ddd_nw_2")), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-plotMDS(x)
-rd_nw_2 <- x
-rd_nw_2.com <- x.com
-plotSmear(rd_nw_2.com, de.tags=rownames(rd_nw_2.com)[decideTestsDGE(rd_nw_2.com) != 0], cex=0.8, main='RNA / DNA (filtered)', ylab="RNA (bottom) / DNA (top)")
-```
-
-```{r compare_RNA_DNA_numbers, echo=FALSE}
-rd_nw_2.up      <- sum(decideTestsDGE(rd_nw_2.com) > 0)
-rd_nw_2.down    <- sum(decideTestsDGE(rd_nw_2.com) < 0)
-```
-
-`r rd_nw_2.down` clusters were enriched and `r rd_nw_2.up` were depleted in RNA
-libraries compared to DNA.
-
-The majority of the clusters in the top 100 enriched in the RNA libraries did
-not overlap with repeat elements, and were overlapping with loci having gene
-symbols.  In contrast, the majority of the top 100 clusters enriched in the DNA
-libraries did not overlap with known genes.  A mild enrichment for GGGTG
-simple repeats is noted.
-
-```{r compare_RNA_DNA, dependson=c('load_gene_symbols' ,'RNA_vs_DNA,')}
-# Summary of the top 100 clusters enriched in DNA libraries.
-summary(merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-# Summary of the top 100 clusters enriched in RNA libraries.
-summary(merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-```
-
-### <a name='DNA-LNA'>DNA vs. LNA</a>
-
-
-```{r DNA_vs_LNA, dev='png'}
-x     <- DGEList(counts=l2[,c(ddd,lll)], group=c(rep('ddd',3),rep('lll',3)), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-dl <- x
-dl.com <- x.com
-plotMDS(x)
-plotSmear(dl.com, de.tags=rownames(dl.com)[decideTestsDGE(dl.com) != 0], cex=0.8, main='DNA / LNA', ylab="DNA (bottom) / LNA (top)")
-
-x     <- DGEList(counts=l2[,c(ddd_nw_2,lll_nw_2)], group=c(rep('ddd_nw_2',3),rep('lll_nw_2',3)), remove.zeros=TRUE)
-x     <- calcNormFactors(x)
-x     <- estimateCommonDisp(x)
-x     <- estimateTagwiseDisp(x)
-x.com <- exactTest(x)
-plotMDS(x)
-dl_nw_2 <- x
-dl_nw_2.com <- x.com
-plotSmear(dl_nw_2.com, de.tags=rownames(dl_nw_2.com)[decideTestsDGE(dl_nw_2.com) != 0], cex=0.8, main='DNA / LNA (filtered)', ylab="DNA (bottom) / LNA (top)")
-```
-
-```{r compare_DNA_LNA_numbers, echo=FALSE}
-dl_nw_2.up      <- sum(decideTestsDGE(dl_nw_2.com) > 0)
-dl_nw_2.down    <- sum(decideTestsDGE(dl_nw_2.com) < 0)
-```
-
-`r dl_nw_2.up` clusters were enriched and `r dl_nw_2.down` were depleted in LNA
-libraries compared to DNA.
-
-After filtering out strand-invasion artifacts, only few significant differences
-remain between the DNA and LNA libraries.  7SLRNA was also depleted in LNA
-libraries, and CAGAGA repeats were enriched.
-
-
-```{r compare_DNA_LNA, dependson=c('load_gene_symbols' ,'DNA_vs_LNA,')}
-summary(decideTestsDGE(dl_nw_2.com))
-summary(merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC > 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-summary(merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC < 0)[1:100,], genesymbols[,-1], by=0, sort=FALSE))
-```
-
-```{r save_workspace, cache=FALSE}
-save.image('analysis.RData')
-```
-
-<a name="make-tables">Output of the results as tables</a>
---------------------------------------------------------
-
-```{r make-tables, dependson=c('compare_LNA_RNA', 'compare_RNA_DNA', 'compare_DNA_LNA')}
-# One table per list of significantly over-represented clusters.
-write.csv(file='R-L.csv', merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-write.csv(file='L-R.csv', merge(subset(topTags(lr_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-write.csv(file='D-R.csv', merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-write.csv(file='R-D.csv', merge(subset(topTags(rd_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-write.csv(file='L-D.csv', merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC > 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-write.csv(file='D-L.csv', merge(subset(topTags(dl_nw_2.com, Inf)$table, logFC < 0 & FDR < 0.1), genesymbols[, -1], by = "row.names", all.x='T', sort = FALSE), row.names=FALSE)
-
-# One summary table combining all the results.
-l2[rownames(topTags(lr_nw_2.com, Inf)), "LR.logFC"] <- topTags(lr_nw_2.com, Inf)$table$logFC
-l2[rownames(topTags(lr_nw_2.com, Inf)), "LR.FDR"]   <- topTags(lr_nw_2.com, Inf)$table$FDR
-l2[rownames(topTags(rd_nw_2.com, Inf)), "RD.logFC"] <- topTags(rd_nw_2.com, Inf)$table$logFC
-l2[rownames(topTags(rd_nw_2.com, Inf)), "RD.FDR"]   <- topTags(rd_nw_2.com, Inf)$table$FDR
-l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.logFC"] <- topTags(dl_nw_2.com, Inf)$table$logFC
-l2[rownames(topTags(dl_nw_2.com, Inf)), "DL.FDR"]   <- topTags(dl_nw_2.com, Inf)$table$FDR
-l2$symbol <- genesymbols$symbol
-l2$rmsk <- genesymbols$rmsk
-write.csv(file="DRR014141.DGE.csv", l2)
+```{r compare_LNA_RNA}
+n <- 1
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="LNA vs RNA")
+topTreat(d,n)
 ```
 
 
-<a name="notes-on-software">Notes on the software</a>
------------------------------------------------------
+### RNA vs DNA
 
-This analysis was done on a iMac with a i7 hyperthreaded quad-core CPU (2.93
-GHz) and 12 GiB of memory, running [Debian](http://www.debian.org) system, with
-the following packages installed.
-
-```{r list-packages, engine="bash"}
-dpkg -l bedtools bwa fastx-toolkit moreutils r-base r-bioc-edger samtools
+```{r compare_RNA_DNA}
+n <- 2
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="RNA vs DNA")
+topTreat(d,n)
 ```
 
-This tutorial was made with the [knitr](http://yihui.name/knitr/) library for
-`R`, that produces HTML pages from templates containing executable code.
+
+### DNA vs LNA
+
+```{r compare_DNA_LNA}
+n <- 3
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="DNA vs LNA")
+topTreat(d,n)
+```
+
+## Differential representation analysis after removing strand invaders.
+
+```{r voom-filtered, dev='png'}
+
+# In alphabetical order
+samples <- c(ddd_nw_2, lll_nw_2, rrr_nw_2)
+groups  <- c(rep('DNA_nw2',3), rep('LNA_nw2',3), rep('RNA_nw2', 3))
+
+design <- model.matrix(~0+groups)
+colnames(design) <- c("DNA_nw2", "LNA_nw2", "RNA_nw2")
+design
+
+cont.matrix <- makeContrasts( LNA_vs_RNA = LNA_nw2 - RNA_nw2
+                            , RNA_vs_DNA = RNA_nw2 - DNA_nw2
+                            , DNA_vs_LNA = DNA_nw2 - LNA_nw2
+                            , levels = design)
+
+d <-  DGEList( counts = l2[samples]
+             , group  = groups
+             , remove.zeros = TRUE) %>%
+        calcNormFactors %>%
+        voom(design, plot = TRUE)
+
+plotMDS(d)
+
+d %<>% lmFit(design) %>%
+  contrasts.fit(cont.matrix) %>%
+  eBayes
+
+d$genes <- genesymbols[rownames(d),]
+
+topTable(d, n=30)
+summary(decideTests(d))
+decideTests(d) %>% vennDiagram
+```
+
+### LNA vs RNA (filtered)
+
+```{r compare_LNA_RNA_f}
+n <- 1
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="LNA vs RNA (filtered)")
+topTreat(d,n)
+```
+
+### RNA vs DNA (filtered)
+
+```{r compare_RNA_DNA_f}
+n <- 2
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="RNA vs DNA (filtered)")
+topTreat(d,n)
+```
+
+
+### DNA vs LNA (filtered)
+
+```{r compare_DNA_LNA_f}
+n <- 3
+cont.matrix[,n]
+plotMD( d, coef=n, status=decideTests(d)[,n] !=0
+      , main="DNA vs LNA (filtered)")
+topTreat(d,n)
+```
+
+## Session info.
 
 ```{r session_info, cache=FALSE}
 sessionInfo()
