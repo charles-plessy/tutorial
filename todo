@@ -1,0 +1,17 @@
+Tipsntricks
+
+ - pch='.' ?
+
+ - caveats.
+    - Losing row order between tables
+    - Interpreting factors as numbers and vice-versa
+    - Zero expression being NA or not
+    - 
+
+ - x[which(x > 0)] instead of x[x > 0] in case of NA values.
+   complete.cases ?
+
+Others:
+
+ - CPM transformation deos not change the correlation coefficients,
+   but will change the distances (transformation is recommended).
