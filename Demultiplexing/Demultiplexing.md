@@ -56,7 +56,7 @@ __END__
 ### Run TagDust in paired-end mode with the architecture file.
 
 ```
-tagdust -t 4 -ref tagdust.fa -arch DRR049557.arch -o DRR049557 DRR049557_1.fastq.bz2 DRR049557_2.fastq.bz2
+tagdust -t 4 -show_finger_seq -ref tagdust.fa -arch DRR049557.arch -o DRR049557 DRR049557_1.fastq.bz2 DRR049557_2.fastq.bz2
 ```
 
 `-t 4` allocates 4 cores to the task.  You can adapt this number to the machine where you run that command.
