@@ -8,7 +8,7 @@ running Linux.
 ## If $HOME/bin is not available, create it.
 
 ```
-mkdir $HOME/bin
+mkdir -p $HOME/bin
 ```
 
 Log out, and log in again.  On Linux systems such as Debian, $HOME/bin is now in the $PATH.
