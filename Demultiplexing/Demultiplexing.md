@@ -15,12 +15,13 @@ Log out, and log in again.  On Linux systems such as Debian, $HOME/bin is now in
 
 ## If TagDust 2 is not available, install it.
 
-Here we are downloading version 2.31.
+Here we are downloading version 2.33.  This is the first version where the option `-show_finger_seq`
+is available.
 
 ```
-wget http://downloads.sourceforge.net/project/tagdust/tagdust-2.31.tar.gz
-tar xvfz tagdust-2.31.tar.gz 
-cd tagdust-2.31
+wget http://downloads.sourceforge.net/project/tagdust/tagdust-2.33.tar.gz
+tar xvfz tagdust-2.33.tar.gz 
+cd tagdust-2.33
 ./configure
 make
 cp src/tagdust $HOME/bin
