@@ -220,3 +220,14 @@ In our test run, its content was:
 [2016-07-08 00:24:06]	1	Nextera_505_Reversed:
 [2016-07-08 00:24:06]	2	Nextera_703_Reversed:
 ```
+
+The resulting FASTQ reads look like this:
+
+```
+@DRR049557.7 HWI-ST549:177:C6Y04ACXX:2:1101:1316:1986 length=51;FP:GTCAGGGG;RQ:30.19
+GGGGAATCAGGGTTCGATTCCGGAGAGGGN
++
+JJDDDDDDDDDDDDDDDEDDEDDDDDDDD#
+```
+
+The sequence of the fingerprint is indicated by the `FP:` tag in the semicolon-separated part of the read name.
