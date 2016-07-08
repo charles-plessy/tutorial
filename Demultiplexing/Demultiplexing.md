@@ -159,64 +159,64 @@ The `tagdust` command also produces a summary file, `DRR049557_logfile.txt`.
 In our test run, its content was:
 
 ```
-[2016-02-29 12:42:46]	Tagdust 2.31, Copyright (C) 2013 Timo Lassmann <timolassmann@gmail.com>
-[2016-02-29 12:42:46]	cmd: tagdust -t 4 -ref tagdust.fa -arch DRR049557.arch -o DRR049557. DRR049557_1.fastq.bz2 DRR049557_2.fastq.bz2 
-[2016-02-29 12:42:46]	Start Run
+[2016-07-07 09:29:55]	Tagdust 2.33, Copyright (C) 2013 Timo Lassmann <timolassmann@gmail.com>
+[2016-07-07 09:29:55]	cmd: tagdust -t 4 -show_finger_seq -ref tagdust.fa -arch DRR049557.arch -o DRR049557 DRR049557_1.fastq.bz2 DRR049557_2.fastq.bz2 
+[2016-07-07 09:29:55]	Start Run
 --------------------------------------------------
-[2016-02-29 12:42:46]	Looking at file:DRR049557_1.fastq.bz2
-[2016-02-29 12:42:46]	Searching for best architecture in file 'DRR049557.arch'
-[2016-02-29 12:43:13]	Using: -1 B:ACATGA,ATCATA,CACGTG,CGATGA,GAGATA,GCTCTC,GTATGA,TCGATA,AGTAGC,ATCGCA,CACTCT,CTGAGC,GAGCGT,GCTGCA,TATAGC,CACGAT,CTGACG -2 F:NNNNNNNN -3 S:TATAGGG -4 R:N 
-[2016-02-29 12:43:13]	1.00 Confidence.
-[2016-02-29 12:43:13]	Looking at file:DRR049557_2.fastq.bz2
-[2016-02-29 12:43:13]	Searching for best architecture in file 'DRR049557.arch'
-[2016-02-29 12:43:41]	Using: -1 R:N 
-[2016-02-29 12:43:41]	1.00 Confidence.
-[2016-02-29 12:43:57]	Determining threshold for read0.
-[2016-02-29 12:44:07]	Long sequence found. Need to realloc model...
-[2016-02-29 12:46:48]	Selected Threshold:: 2.701202
-[2016-02-29 12:46:49]	Determining threshold for read1.
-[2016-02-29 12:46:57]	Long sequence found. Need to realloc model...
-[2016-02-29 12:46:58]	Selected Threshold:: 3.051751
-[2016-02-29 12:47:16]	Detected casava 1.8 format.
-[2016-03-01 03:31:00]	Done.
+[2016-07-07 09:29:55]	Looking at file:DRR049557_1.fastq.bz2
+[2016-07-07 09:29:55]	Searching for best architecture in file 'DRR049557.arch'
+[2016-07-07 09:30:26]	Using: -1 B:ACATGA,ATCATA,CACGTG,CGATGA,GAGATA,GCTCTC,GTATGA,TCGATA,AGTAGC,ATCGCA,CACTCT,CTGAGC,GAGCGT,GCTGCA,TATAGC,CACGAT,CTGACG -2 F:NNNNNNNN -3 S:TATAGGG -4 R:N 
+[2016-07-07 09:30:26]	1.00 Confidence.
+[2016-07-07 09:30:26]	Looking at file:DRR049557_2.fastq.bz2
+[2016-07-07 09:30:26]	Searching for best architecture in file 'DRR049557.arch'
+[2016-07-07 09:30:53]	Using: -1 R:N 
+[2016-07-07 09:30:53]	1.00 Confidence.
+[2016-07-07 09:31:10]	Determining threshold for read0.
+[2016-07-07 09:31:20]	Long sequence found. Need to realloc model...
+[2016-07-07 09:34:31]	Selected Threshold:: 2.658036
+[2016-07-07 09:34:31]	Determining threshold for read1.
+[2016-07-07 09:34:41]	Long sequence found. Need to realloc model...
+[2016-07-07 09:34:42]	Selected Threshold:: 3.051751
+[2016-07-07 09:35:01]	Detected casava 1.8 format.
+[2016-07-08 00:24:06]	Done.
 
-[2016-03-01 03:31:00]	DRR049557_1.fastq.bz2	Input file 0.
-[2016-03-01 03:31:00]	DRR049557_2.fastq.bz2	Input file 1.
-[2016-03-01 03:31:00]	217752577	total input reads
-[2016-03-01 03:31:00]	3.05	selected threshold
-[2016-03-01 03:31:00]	187152152	successfully extracted
-[2016-03-01 03:31:00]	85.9%	extracted
-[2016-03-01 03:31:00]	12048101	problems with architecture
-[2016-03-01 03:31:00]	1248439	barcode / UMI not found
-[2016-03-01 03:31:00]	0	too short
-[2016-03-01 03:31:00]	10318	low complexity
-[2016-03-01 03:31:00]	17293567	match artifacts:
-[2016-03-01 03:31:00]	1750534	RT_(without_random_bases)
-[2016-03-01 03:31:00]	15346	empty_(TS_linker_+_RT_reverse-complemented)
-[2016-03-01 03:31:00]	470963	Nextera_501
-[2016-03-01 03:31:00]	108	Nextera_502
-[2016-03-01 03:31:00]	1349	Nextera_503
-[2016-03-01 03:31:00]	391	Nextera_504
-[2016-03-01 03:31:00]	14	Nextera_505
-[2016-03-01 03:31:00]	1	Nextera_506
-[2016-03-01 03:31:00]	73	Nextera_507
-[2016-03-01 03:31:00]	3	Nextera_508
-[2016-03-01 03:31:00]	11706606	Nextera_701
-[2016-03-01 03:31:00]	374308	Nextera_702
-[2016-03-01 03:31:00]	2972121	Nextera_703
-[2016-03-01 03:31:00]	16	Nextera_704
-[2016-03-01 03:31:00]	302	Nextera_705
-[2016-03-01 03:31:00]	151	Nextera_706
-[2016-03-01 03:31:00]	416	Nextera_707
-[2016-03-01 03:31:00]	28	Nextera_708
-[2016-03-01 03:31:00]	137	Nextera_709
-[2016-03-01 03:31:00]	16	Nextera_710
-[2016-03-01 03:31:00]	445	Nextera_711
-[2016-03-01 03:31:00]	169	Nextera_712
-[2016-03-01 03:31:00]	60	Nextera_501_Reversed:
-[2016-03-01 03:31:00]	2	Nextera_502_Reversed:
-[2016-03-01 03:31:00]	2	Nextera_503_Reversed:
-[2016-03-01 03:31:00]	3	Nextera_504_Reversed:
-[2016-03-01 03:31:00]	1	Nextera_505_Reversed:
-[2016-03-01 03:31:00]	2	Nextera_703_Reversed:
+[2016-07-08 00:24:06]	DRR049557_1.fastq.bz2	Input file 0.
+[2016-07-08 00:24:06]	DRR049557_2.fastq.bz2	Input file 1.
+[2016-07-08 00:24:06]	217752577	total input reads
+[2016-07-08 00:24:06]	3.05	selected threshold
+[2016-07-08 00:24:06]	187155993	successfully extracted
+[2016-07-08 00:24:06]	85.9%	extracted
+[2016-07-08 00:24:06]	12041093	problems with architecture
+[2016-07-08 00:24:06]	1251417	barcode / UMI not found
+[2016-07-08 00:24:06]	0	too short
+[2016-07-08 00:24:06]	10318	low complexity
+[2016-07-08 00:24:06]	17293756	match artifacts:
+[2016-07-08 00:24:06]	1750534	RT_(without_random_bases)
+[2016-07-08 00:24:06]	15346	empty_(TS_linker_+_RT_reverse-complemented)
+[2016-07-08 00:24:06]	470963	Nextera_501
+[2016-07-08 00:24:06]	108	Nextera_502
+[2016-07-08 00:24:06]	1349	Nextera_503
+[2016-07-08 00:24:06]	391	Nextera_504
+[2016-07-08 00:24:06]	14	Nextera_505
+[2016-07-08 00:24:06]	1	Nextera_506
+[2016-07-08 00:24:06]	73	Nextera_507
+[2016-07-08 00:24:06]	3	Nextera_508
+[2016-07-08 00:24:06]	11706684	Nextera_701
+[2016-07-08 00:24:06]	374315	Nextera_702
+[2016-07-08 00:24:06]	2972225	Nextera_703
+[2016-07-08 00:24:06]	16	Nextera_704
+[2016-07-08 00:24:06]	302	Nextera_705
+[2016-07-08 00:24:06]	151	Nextera_706
+[2016-07-08 00:24:06]	416	Nextera_707
+[2016-07-08 00:24:06]	28	Nextera_708
+[2016-07-08 00:24:06]	137	Nextera_709
+[2016-07-08 00:24:06]	16	Nextera_710
+[2016-07-08 00:24:06]	445	Nextera_711
+[2016-07-08 00:24:06]	169	Nextera_712
+[2016-07-08 00:24:06]	60	Nextera_501_Reversed:
+[2016-07-08 00:24:06]	2	Nextera_502_Reversed:
+[2016-07-08 00:24:06]	2	Nextera_503_Reversed:
+[2016-07-08 00:24:06]	3	Nextera_504_Reversed:
+[2016-07-08 00:24:06]	1	Nextera_505_Reversed:
+[2016-07-08 00:24:06]	2	Nextera_703_Reversed:
 ```
