@@ -1,0 +1,89 @@
+---
+title: "Annotated DPI clusters in BED format."
+output:
+  html_document: 
+    keep_md: yes
+  html_notebook: default
+---
+
+# Annotated DPI clusters in BED format.
+
+[FANTOM5](http://fantom.gsc.riken.jp/5/) CAGE peaks
+([DPI clusters](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/))
+are avaliable as BED files for their coordinates, supplemented by an annotation
+file.  This annotation files provides a short description that contains the
+gene symbol when possible.  Here, I replace the "name" field of the BED file
+by the "short_description" field of the annotation file.  I do it in R because
+the files are not sorted in the same order, and I am more comfortable
+with join operations in R than in shell.
+
+## Get and check the data in the command line:
+
+Download the human DPI clusters from the FANTOM5 website.
+
+```{sh}
+curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_phase1and2combined_ann.txt.gz | gunzip > hg19.cage_peak_phase1and2combined_ann.txt
+curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_phase1and2combined_coord.bed.gz | gunzip > hg19.cage_peak_phase1and2combined_coord.bed
+```
+
+The file `hg19.cage_peak_phase1and2combined_ann.txt` contains annotations.
+
+```{sh}
+head hg19.cage_peak_phase1and2combined_ann.txt
+```
+
+The files `hg19.cage_peak_phase1and2combined_coord.bed` contains coordinates.
+
+```{sh}
+head hg19.cage_peak_phase1and2combined_coord.bed
+```
+
+I want to replace the names in the coordinates file (fourth field) with the
+`short_description` from the first files.  But the files are not sorted in the
+same order.  Let's do the work in `R`
+
+## Merge and output in `R`
+
+```{r}
+ann <- read.table( "hg19.cage_peak_phase1and2combined_ann.txt", head = TRUE
+                 , sep = "\t", row.names = 1)
+summary(ann)
+head(ann)
+```
+
+```{r}
+coord <- read.table( "hg19.cage_peak_phase1and2combined_coord.bed"
+                   , head = FALSE
+                   , sep = "\t"
+                   , row.names = 4)
+colnames(coord) <- c("chrom", "start", "end", "score", "strand", "bstart", "bend", "col")
+summary(coord)
+head(coord)
+```
+
+```{r}
+out <- merge(ann, coord, by = "row.names")[ ,c("chrom", "start","end","short_description","score","strand")]
+out <- out[order(out$chrom, out$start, out$end, out$strand),]
+summary(out)
+head(out)
+```
+
+```{r}
+write.table( out
+           , file      = "hg19.cage_peak_phase1and2combined_anncoord.bed"
+           , sep       = "\t"
+           , row.names = FALSE
+           , col.names = FALSE
+           , quote     = FALSE)
+```
+
+## Check the output in the command line
+
+```{sh}
+wc -l hg19.cage_peak_phase1and2combined*bed
+```
+
+```{sh}
+head hg19.cage_peak_phase1and2combined_anncoord.bed
+```
+
