@@ -120,9 +120,32 @@ $(document).ready(function () {
 </div>
 
 
-<div id="annotated-dpi-clusters-in-bed-format." class="section level1">
-<h1>Annotated DPI clusters in BED format.</h1>
+<div id="goal" class="section level2">
+<h2>Goal:</h2>
+<p>Transform this:</p>
+<pre><code>chr1    564571  564600  chr1:564571..564600,+   2398    +   564588  564589  255,0,0
+chr1    564639  564649  chr1:564639..564649,+   220 +   564645  564646  255,0,0
+chr1    565266  565278  chr1:565266..565278,+   535 +   565269  565270  255,0,0
+chr1    565478  565483  chr1:565478..565483,+   106 +   565480  565481  255,0,0
+chr1    565509  565541  chr1:565509..565541,+   3594    +   565523  565524  255,0,0
+chr1    565662  565697  chr1:565662..565697,+   3243    +   565695  565696  255,0,0
+chr1    565857  565899  chr1:565857..565899,+   592 +   565862  565863  255,0,0
+chr1    566537  566573  chr1:566537..566573,+   306 +   566564  566565  255,0,0
+chr1    566736  566770  chr1:566736..566770,+   1145    +   566760  566761  255,0,0
+chr1    566871  566878  chr1:566871..566878,+   102 +   566874  566875  255,0,0</code></pre>
+<p>Into that:</p>
+<pre><code>chr1    564571  564600  p1@MTND1P23 2398    +
+chr1    564639  564649  p3@MTND1P23 220 +
+chr1    565266  565278  p3@MTND2P28 535 +
+chr1    565478  565483  p4@MTND2P28 106 +
+chr1    565509  565541  p1@MTND2P28 3594    +
+chr1    565662  565697  p@chr1:565662..565697,+ 3243    +
+chr1    565857  565899  p@chr1:565857..565899,+ 592 +
+chr1    566537  566573  p4@uc001aaz.2   306 +
+chr1    566736  566770  p2@uc001aaz.2   1145    +
+chr1    566871  566878  p7@uc001aaz.2   102 +</code></pre>
 <p><a href="http://fantom.gsc.riken.jp/5/">FANTOM5</a> CAGE peaks (<a href="http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/">DPI clusters</a>) are avaliable as BED files for their coordinates, supplemented by an annotation file. This annotation files provides a short description that contains the gene symbol when possible. Here, I replace the “name” field of the BED file by the “short_description” field of the annotation file. I do it in R because the files are not sorted in the same order, and I am more comfortable with join operations in R than in shell.</p>
+</div>
 <div id="get-and-check-the-data-in-the-command-line" class="section level2">
 <h2>Get and check the data in the command line:</h2>
 <p>Download the human DPI clusters from the FANTOM5 website.</p>
@@ -308,7 +331,6 @@ summary(out)</code></pre>
 ## chr1 566537  566573  p4@uc001aaz.2   306 +
 ## chr1 566736  566770  p2@uc001aaz.2   1145    +
 ## chr1 566871  566878  p7@uc001aaz.2   102 +</code></pre>
-</div>
 </div>
 
 
