@@ -11,7 +11,7 @@ running Linux.
 mkdir -p $HOME/bin
 ```
 
-Log out, and log in again.  On Linux systems such as Debian, $HOME/bin is now in the $PATH.
+Log out, and log in again.  On Linux systems such as Debian, `$HOME/bin` is now in the `$PATH`.
 
 ## If TagDust 2 is not available, install it.
 
