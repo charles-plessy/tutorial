@@ -1,6 +1,13 @@
 Demultiplexing with TagDust 2
 =============================
 
+_Multiplexing_ is done by adding artificial sequences to molecules, to encode their
+sample of origin, so that multiple samples can be sequenced together (to save costs).
+_Demultiplexing_ is to retreive this information from the sequence reads, and recode
+it as an addition to the read name or by grouping the reads in separate files.  Some
+multiplexing strategies are supported natively by some sequencers, but a lot of
+custom designs also exist.
+
 In this example, we will install [TagDust 2](https://sourceforge.net/projects/tagdust/),
 download [nanoCAGE](http://population-transcriptomics.org/nanoCAGE/) data from DDBJ,
 and demultiplex it.  These commands have been tested on a virtual machine
