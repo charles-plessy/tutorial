@@ -1,7 +1,8 @@
 Demultiplexing with TagDust 2
 =============================
 
-In this example, we will install TagDust 2, download nanoCAGE data from DDBJ,
+In this example, we will install [TagDust 2](https://sourceforge.net/projects/tagdust/),
+download [nanoCAGE](http://population-transcriptomics.org/nanoCAGE/) data from DDBJ,
 and demultiplex it.  These commands have been tested on a virtual machine
 running Linux.
 
