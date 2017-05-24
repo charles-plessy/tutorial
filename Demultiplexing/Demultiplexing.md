@@ -44,7 +44,18 @@ wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA004/DRA004180/DRX044600
 
 ## Demultiplex.
 
+The sequence of Read 1 should match with `BBBBBBNNNNNNNNTATAGGG`, where `B`
+is a barcode base, `N` is a UMI base, and `TATAGGG` is a linker sequence that
+is the same in every read.  The rest of the bases are cDNA sequences to be aligned
+on the genome.
+
 ### Create an _architecture_ file for TagDust.
+
+The _architecture_ files declare the structure of the reads in a machine-readable
+format, where `B`, `F`, `S` and `R` bloks declare _barcodes_, _fingerprints_ (UMIs),
+_spacers_ (linkers), and the _rna_ sequence to be aligned.  More details can be
+found in the user manual (the `doc/User-Manual.pdf` file in TagDust's source
+archive) or in [Lassmann T., 2015](10.1186/s12859-015-0454-y).
 
 ```
 cat > DRR049557.arch <<__END__
