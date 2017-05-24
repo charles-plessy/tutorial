@@ -78,7 +78,10 @@ __END__
 tagdust -t 4 -show_finger_seq -ref tagdust.fa -arch DRR049557.arch -o DRR049557 DRR049557_1.fastq.bz2 DRR049557_2.fastq.bz2
 ```
 
-`-t 4` allocates 4 cores to the task.  You can adapt this number to the machine where you run that command.
+`-t 4` allocates 4 cores to the task.  You can adapt this number to the machine
+where you run that command.  Note that even when using multiple cores, TagDust may
+take hours before finishing.  Look at the timestamps in the [example output](#example-log-file)
+below for an example.
 
 The file [`tagdust.fa`](./tagdust.fa) contains sequences of nanoCAGE linkers and of Nextera sequencing
 linkers.
@@ -173,6 +176,7 @@ DRR049557_BC_c33a_r3_READ2.fq
 DRR049557_un_READ1.fq
 DRR049557_un_READ2.fq
 ```
+### Example log file
 
 The `tagdust` command also produces a summary file, `DRR049557_logfile.txt`.
 In our test run, its content was:
