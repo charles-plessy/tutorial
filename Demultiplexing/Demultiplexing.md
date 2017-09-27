@@ -1,4 +1,4 @@
-Demultiplexing with TagDust 2
+Demultiplexing nanoCAGE reads
 =============================
 
 _Multiplexing_ is done by adding artificial sequences to molecules, to encode their
@@ -8,10 +8,10 @@ it as an addition to the read name or by grouping the reads in separate files.  
 multiplexing strategies are supported natively by some sequencers, but a lot of
 custom designs also exist.
 
-In this example, we will install [TagDust 2](https://sourceforge.net/projects/tagdust/),
-download [nanoCAGE](http://population-transcriptomics.org/nanoCAGE/) data from DDBJ,
-and demultiplex it.  These commands have been tested on a virtual machine
-running Linux.
+In this example, we will demultiplex [nanoCAGE](https://population-transcriptomics.org/nanoCAGE/)
+data from DDBJ using install [TagDust 2](https://sourceforge.net/projects/tagdust/),
+after removing PCR duplicates with [clumpify](https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/clumpify-guide/).
+These commands have been tested on a virtual machine running Linux.
 
 ## If $HOME/bin is not available, create it.
 
@@ -35,6 +35,12 @@ make
 cp src/tagdust $HOME/bin
 cd
 ```
+## If [BBTools](https://jgi.doe.gov/data-and-tools/bbtools/) is not available, install it.
+
+```
+wget --trust-server-names https://sourceforge.net/projects/bbmap/files/latest/download
+tar xvfz tar xvfz BBMap_*.tar.gz
+```
 
 ## Download the sequences from DDBJ.
 
@@ -48,6 +54,18 @@ early stage.
 ```
 wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA004/DRA004180/DRX044600/DRR049557_1.fastq.bz2
 wget ftp://ftp.ddbj.nig.ac.jp/ddbj_database/dra/fastq/DRA004/DRA004180/DRX044600/DRR049557_2.fastq.bz2
+```
+
+## Deduplicate
+
+```
+./bbmap/clumpify.sh in=DRR049557_1.fastq.bz2 in2=DRR049557_2.fastq.bz2 out=DRR049557_1.demul.fastq.gz out2=DRR049557_2.demul.fastq.gz shortname=t dedupe=t dupesubs=2 addcount=t
+```
+
+output:
+
+```
+
 ```
 
 ## Demultiplex.
