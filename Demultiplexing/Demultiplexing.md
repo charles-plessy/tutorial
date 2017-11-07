@@ -332,6 +332,8 @@ tagdust -t 20 -show_finger_seq -ref tagdust.fa -arch DRR049557.arch -o DRR049557
 
 The resulting FASTQ reads look like this:
 
+TO UPDATE: actually it does not: clumpify shortens the name.  The example below is the result when not runnign clumpify.
+
 ```
 @DRR049557.7 HWI-ST549:177:C6Y04ACXX:2:1101:1316:1986 length=51;FP:GTCAGGGG;RQ:30.19
 GGGGAATCAGGGTTCGATTCCGGAGAGGGN
