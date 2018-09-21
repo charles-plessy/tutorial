@@ -345,6 +345,67 @@ summary(out)</code></pre>
 ## chr1 566736  566770  p2@uc001aaz.2   1145    +
 ## chr1 566871  566878  p7@uc001aaz.2   102 +</code></pre>
 </div>
+<div id="same-for-mouse" class="section level2">
+<h2>Same for mouse</h2>
+<pre class="sh"><code>curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/mm9.cage_peak_phase1and2combined_ann.txt.gz | gunzip &gt; mm9.cage_peak_phase1and2combined_ann.txt
+curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/mm9.cage_peak_phase1and2combined_coord.bed.gz | gunzip &gt; hg19.cage_peak_phase1and2combined_coord.bed</code></pre>
+<pre class="r"><code>ann   &lt;- read.table( &quot;mm9.cage_peak_phase1and2combined_ann.txt&quot;, head = TRUE
+                   , sep = &quot;\t&quot;, row.names = 1)
+
+coord &lt;- read.table( &quot;hg19.cage_peak_phase1and2combined_coord.bed&quot;
+                   , head = FALSE
+                   , sep = &quot;\t&quot;
+                   , row.names = 4)
+colnames(coord) &lt;- c(&quot;chrom&quot;, &quot;start&quot;, &quot;end&quot;, &quot;score&quot;, &quot;strand&quot;, &quot;bstart&quot;, &quot;bend&quot;, &quot;col&quot;)
+
+out &lt;- merge( ann, coord
+            , by = &quot;row.names&quot;)[ ,c(&quot;chrom&quot;, &quot;start&quot;,&quot;end&quot;,&quot;short_description&quot;,&quot;score&quot;,&quot;strand&quot;)]
+out &lt;- out[order(out$chrom, out$start, out$end, out$strand),]
+
+write.table( out
+           , file      = &quot;mm9.cage_peak_phase1and2combined_anncoord.bed&quot;
+           , sep       = &quot;\t&quot;
+           , row.names = FALSE
+           , col.names = FALSE
+           , quote     = FALSE)</code></pre>
+<pre class="sh"><code>wc -l mm9.cage_peak_phase1and2combined*bed
+head mm9.cage_peak_phase1and2combined_anncoord.bed</code></pre>
+<pre><code>## 158966 mm9.cage_peak_phase1and2combined_anncoord.bed
+## chr1 3309585 3309588 p@chr1:3309585..3309588,-   153 -
+## chr1 3367867 3367870 p@chr1:3367867..3367870,-   569 -
+## chr1 3479230 3479234 p@chr1:3479230..3479234,-   163 -
+## chr1 3644976 3644980 p@chr1:3644976..3644980,-   493 -
+## chr1 3657915 3657919 p@chr1:3657915..3657919,-   904 -
+## chr1 3661752 3661814 p1@Xkr4 4638    -
+## chr1 3661851 3661889 p2@Xkr4 2432    -
+## chr1 3664689 3664693 p@chr1:3664689..3664693,+   578 +
+## chr1 3863291 3863316 p@chr1:3863291..3863316,+   139 +
+## chr1 4350318 4350327 p3@Rp1  413 -</code></pre>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.3.3 (2017-03-06)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Debian GNU/Linux 9 (stretch)
+## 
+## locale:
+##  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    
+##  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   
+##  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## loaded via a namespace (and not attached):
+##  [1] backports_1.1.2 magrittr_1.5    rprojroot_1.3-2 tools_3.3.3    
+##  [5] htmltools_0.3.5 yaml_2.1.14     Rcpp_0.12.9     stringi_1.2.4  
+##  [9] rmarkdown_1.10  knitr_1.20      stringr_1.3.1   digest_0.6.11  
+## [13] evaluate_0.10</code></pre>
+</div>
 
 
 

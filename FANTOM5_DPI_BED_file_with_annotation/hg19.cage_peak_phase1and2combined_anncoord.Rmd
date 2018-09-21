@@ -117,3 +117,44 @@ wc -l hg19.cage_peak_phase1and2combined*bed
 head hg19.cage_peak_phase1and2combined_anncoord.bed
 ```
 
+
+## Same for mouse
+
+```{sh}
+curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/mm9.cage_peak_phase1and2combined_ann.txt.gz | gunzip > mm9.cage_peak_phase1and2combined_ann.txt
+curl --silent http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/mm9.cage_peak_phase1and2combined_coord.bed.gz | gunzip > hg19.cage_peak_phase1and2combined_coord.bed
+```
+
+```{r}
+ann   <- read.table( "mm9.cage_peak_phase1and2combined_ann.txt", head = TRUE
+                   , sep = "\t", row.names = 1)
+
+coord <- read.table( "hg19.cage_peak_phase1and2combined_coord.bed"
+                   , head = FALSE
+                   , sep = "\t"
+                   , row.names = 4)
+colnames(coord) <- c("chrom", "start", "end", "score", "strand", "bstart", "bend", "col")
+
+out <- merge( ann, coord
+            , by = "row.names")[ ,c("chrom", "start","end","short_description","score","strand")]
+out <- out[order(out$chrom, out$start, out$end, out$strand),]
+
+write.table( out
+           , file      = "mm9.cage_peak_phase1and2combined_anncoord.bed"
+           , sep       = "\t"
+           , row.names = FALSE
+           , col.names = FALSE
+           , quote     = FALSE)
+```
+
+```{sh}
+wc -l mm9.cage_peak_phase1and2combined*bed
+head mm9.cage_peak_phase1and2combined_anncoord.bed
+```
+
+
+## Session information 
+
+```{r sessionInfo}
+sessionInfo()
+```
