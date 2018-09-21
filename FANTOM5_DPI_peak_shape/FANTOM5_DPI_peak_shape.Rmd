@@ -1,0 +1,90 @@
+---
+title: "FANTOM5 DPI peak shape"
+author: "Charles Plessy"
+output: 
+  html_document: 
+    keep_md: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+FANTOM5 promoter peak shape
+===========================
+
+The FANTOM5 expression atlas paper (Forrest et al., 2014) describes promoter
+models produced by Decomposition-based Peak Identification (DPI) on CAGE data.
+The DPI peaks have different widths according to the underlying CAGE signal;
+the goal of this page is to use this width as a proxy to classify the promoters
+in _sharp_ or _broad_ categories.
+
+There are multiple limitations to this approach.  In particular, promoter shape
+can change across tissues, and also across time in the same tissue (for instance
+during development).  Indeed, the promoter shape analysis in Forrest 2014 (ext.
+data fig. 2) was performed with a more robust approach, using the 0.1–0.9
+interquantile width of the CAGE expression data accross all samples.  Moreover,
+genes may have multiple promoters of different shapes.  Nevertheless, there are
+cases, such as when handlings large groups of genes, where it may be useful to
+estimate if these genes tend to have sharper or broader promoters.  This is the
+aim of the approach presented here.
+
+
+Width per DPI peak
+------------------
+
+First, run the example in `../FANTOM5_DPI_BED_file_with_annotation/`.
+
+Then, load the result files.
+
+```{r loadAnnotatedClusters}
+(human <- rtracklayer::import.bed("../FANTOM5_DPI_BED_file_with_annotation/hg19.cage_peak_phase1and2combined_anncoord.bed"))
+(mouse <- rtracklayer::import.bed("../FANTOM5_DPI_BED_file_with_annotation/mm9.cage_peak_phase1and2combined_anncoord.bed"))
+```
+
+Then, just use Bioconductor to calculate the width
+
+```{r width}
+human$width <- GenomicRanges::width(human)
+mouse$width <- GenomicRanges::width(mouse)
+```
+
+
+Promoter shape per gene
+------------------------
+
+Here we attribute to a given gene symbol the properties if its promoter with the
+highest expression, which by definition has a name starting with `p1`.
+
+
+```{r perGene}
+human <- human[substr(human$name, 1, 3) == "p1@"]
+human$name  <- factor(sub("p1@", "", human$name))
+human$name  <- factor(sub(",.*", "", human$name))
+human
+
+mouse <- mouse[substr(mouse$name, 1, 3) == "p1@"]
+mouse$name  <- factor(sub("p1@", "", mouse$name))
+mouse$name  <- factor(sub(",.*", "", mouse$name))
+mouse
+```
+
+
+Save lists
+----------
+
+```{r saveLists}
+write.table( file = "human_top_promoter_width.txt"
+           , GenomicRanges::mcols(human)
+           , row.names = FALSE, quote = FALSE, sep = "\t")
+
+write.table( file = "mouse_top_promoter_width.txt"
+           , GenomicRanges::mcols(mouse)
+           , row.names = FALSE, quote = FALSE, sep = "\t")
+```
+
+
+Session information
+-------------------
+
+```{r sessionInfo}
+sessionInfo()
+```
