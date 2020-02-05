@@ -14,7 +14,8 @@ Various tutorials on how to analyse
 These tutorials are designed to be executed on a Linux system's command line
 interface (also called _Terminal_ or _shell_).  I recommend the book _[The Linux
 Command Line][]_, by William E. Shotts, Jr, January 2012, [no starch press][]
-to people not familiar with entering commands on the keyboard.
+to people not familiar with entering commands on the keyboard.  The [_missing
+semseter_](https://missing.csail.mit.edu/) course of MIT looks good as well.
 
 [The Linux Command Line]: http://linuxcommand.org/tlcl.php "A Complete Introduction"
 [no starch press]: http://nostarch.com/tlcl.htm "the finest in geek entertainment"
