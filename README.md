@@ -17,11 +17,11 @@ Command Line][]_, by William E. Shotts, Jr, January 2012, [no starch press][]
 to people not familiar with entering commands on the keyboard.  The [_missing
 semseter_](https://missing.csail.mit.edu/) course of MIT looks good as well.
 
-[The Linux Command Line]: http://linuxcommand.org/tlcl.php "A Complete Introduction"
-[no starch press]: http://nostarch.com/tlcl.htm "the finest in geek entertainment"
+[The Linux Command Line]: https://linuxcommand.org/tlcl.php "A Complete Introduction"
+[no starch press]: https://nostarch.com/tlcl.htm "the finest in geek entertainment"
 
 The programs used are assumed to be installed in advance.  On the
-[Debian](http://www.debian.org) operating system, many of them (BWA, SAMtools,
+[Debian](https://www.debian.org) operating system, many of them (BWA, SAMtools,
 BEDTools, ...) are available pre-packaged and will be installed (altogether
 with many other programs) by the command `apt-get install med-bio`.
 
@@ -29,7 +29,7 @@ Other software have to be downloaded and installed by hand.  Place them in the
 `bin` directory in your home directory, and set their executable property in
 order to use them.  If you had to create the `bin` directory, it will only be
 taken into account at your next connection (see
-[stackoverflow](http://stackoverflow.com/questions/16366986/adding-bin-directory-in-your-path)
+[stackoverflow](https://stackoverflow.com/questions/16366986/adding-bin-directory-in-your-path)
 for alternatives).
 
 Here is for example how to download, compile and install the
@@ -84,7 +84,7 @@ still applies).
 
 ### What is that sponge ?
 
-`sponge` is a command from the [moreutils](http://joeyh.name/code/moreutils/)
+`sponge` is a command from the [moreutils](https://joeyh.name/code/moreutils/)
 collection, that I use frequently.  On Debian systems, it is easy to install
 via the [moreutils](packages.debian.org/moreutils) package.
 
