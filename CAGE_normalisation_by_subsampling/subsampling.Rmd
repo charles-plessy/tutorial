@@ -48,8 +48,8 @@ for all the _Phase 1_ libraries of the [FANTOM 5 project][F5].  See the
 [F5 README]: http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/00_readme.txt
 
 ```{r download_material, engine="bash"}
-wget --quiet --timestamping http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_counts.osc.txt.gz
-echo "6be129d01ce86f3d9fdb3cf26ea3e5ac  hg19.cage_peak_counts.osc.txt.gz" | md5sum -c
+wget --quiet --timestamping https://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_phase1and2combined_counts.osc.txt.gz
+echo "0b288555ef51d1f1f9f04a2536d51a1d  hg19.cage_peak_phase1and2combined_counts.osc.txt.gz" | md5sum -c
 ```
 
 ### Data loading and preparation in R
@@ -64,7 +64,7 @@ with the `header=TRUE` option and row names with the `row.names=1` option.
 The table is large: so loading the table will take time…
 
 ```{r load_data, dependson="download_material"}
-osc <- read.table('hg19.cage_peak_counts.osc.txt.gz', row.names=1, header=TRUE)
+osc <- read.table('hg19.cage_peak_phase1and2combined_counts.osc.txt.gz', row.names=1, header=TRUE)
 dim(osc)
 ```
 
@@ -140,7 +140,10 @@ project if you do not understand well the consequences._
 ```{r rrarefy, dependson="stat_mapped"}
 library(vegan)
 set.seed(1)
-osc.sub <- t(rrarefy(t(osc), min(numberOfTags)))
+minNumberOfTags <- 500000
+# Let's discard the libraries that do not have enough tags.
+summary(numberOfTags > minNumberOfTags)
+osc.sub <- t(rrarefy(t(osc[,numberOfTags > minNumberOfTags]), minNumberOfTags))
 rm(.Random.seed)
 summary(colSums(osc.sub), digits=10)
 ```
@@ -153,9 +156,9 @@ That is all !  Now all the libraries contain the same number of tags.
 normalisedNumberOfPeaks <- colSums(osc.sub > 0)
 normalisedNumberOfPeaks[adipocytes]
 colSums(osc.sub)[adipocytes]
-barplot( log10( cbind( normalisedNumberOfPeaks
-                     , numberOfPeaks
-                     , numberOfTags) [adipocytes,]
+barplot( log10( cbind( normalisedNumberOfPeaks[adipocytes]
+                     , numberOfPeaks[adipocytes]
+                     , numberOfTags[adipocytes])
               )
        , beside=TRUE
        , legend=TRUE
