@@ -46,12 +46,12 @@ for all the _Phase 1_ libraries of the [FANTOM 5 project][F5].  See the
 
 
 ```bash
-wget --quiet --timestamping http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_counts.osc.txt.gz
-echo "6be129d01ce86f3d9fdb3cf26ea3e5ac  hg19.cage_peak_counts.osc.txt.gz" | md5sum -c
+wget --quiet --timestamping https://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/hg19.cage_peak_phase1and2combined_counts.osc.txt.gz
+echo "0b288555ef51d1f1f9f04a2536d51a1d  hg19.cage_peak_phase1and2combined_counts.osc.txt.gz" | md5sum -c
 ```
 
 ```
-## hg19.cage_peak_counts.osc.txt.gz: OK
+## hg19.cage_peak_phase1and2combined_counts.osc.txt.gz: OK
 ```
 
 ### Data loading and preparation in R
@@ -67,12 +67,12 @@ The table is large: so loading the table will take time…
 
 
 ```r
-osc <- read.table('hg19.cage_peak_counts.osc.txt.gz', row.names=1, header=TRUE)
+osc <- read.table('osc <- read.table('hg19.cage_peak_counts.osc.txt.gz', row.names=1, header=TRUE)', row.names=1, header=TRUE)
 dim(osc)
 ```
 
 ```
-## [1] 184828    889
+## [1] 201803   1829
 ```
 
 The name of the libraries are long because they contain a plain English
@@ -99,11 +99,11 @@ summary(t(osc["01STAT:MAPPED",]))
 
 ```
 ##  01STAT:MAPPED     
-##  Min.   :  515670  
-##  1st Qu.: 2514503  
-##  Median : 4275027  
-##  Mean   : 4803336  
-##  3rd Qu.: 6532804  
+##  Min.   :    6602
+##  1st Qu.: 1787336
+##  Median : 3229346
+##  Mean   : 3808352
+##  3rd Qu.: 5254150
 ##  Max.   :16059002
 ```
 
@@ -114,7 +114,7 @@ summary(colSums(osc), digits=10)
 
 ```
 ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-##   515670  2514503  4275027  4803336  6532804 16059002
+##     6602  1787336  3229346  3808352  5254150 16059002 
 ```
 
 ### Number of peaks detected and total number of tags, part 1
@@ -133,7 +133,7 @@ summary(colSums(osc > 0), digits=10)
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##   25325   47212   55771   55880   63096  114665
+##     360   44966   55314   54276   64576  121973
 ```
 
 There are large variations in the number of peaks detected.  Let's take the example
@@ -152,8 +152,8 @@ numberOfPeaks[adipocytes]
 ```
 
 ```
-## CNhs12494 CNhs11371 CNhs12017 
-##     26353     38773     50976
+## CNhs12494 CNhs11371 CNhs12017
+##     27728     41048     54730
 ```
 
 ```r
@@ -192,19 +192,24 @@ library(vegan)
 ```
 ## Loading required package: permute
 ## Loading required package: lattice
-## This is vegan 2.0-10
+## This is vegan 2.6-4
 ```
 
 ```r
 set.seed(1)
-osc.sub <- t(rrarefy(t(osc), min(numberOfTags)))
+minNumberOfTags <- 500000
+# Let's discard the libraries that do not have enough tags.
+summary(numberOfTags > minNumberOfTags)
+##    Mode   FALSE    TRUE 
+## logical     105    1724 
+osc.sub <- t(rrarefy(t(osc[,numberOfTags > minNumberOfTags]), minNumberOfTags))
 rm(.Random.seed)
 summary(colSums(osc.sub), digits=10)
 ```
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##  515670  515670  515670  515670  515670  515670
+     5e+05   5e+05   5e+05   5e+05   5e+05   5e+05
 ```
 
 That is all !  Now all the libraries contain the same number of tags.
@@ -219,22 +224,14 @@ normalisedNumberOfPeaks[adipocytes]
 
 ```
 ## CNhs12494 CNhs11371 CNhs12017 
-##     25955     27756     26558
+##     27011     28705     27507
 ```
+
 
 ```r
-colSums(osc.sub)[adipocytes]
-```
-
-```
-## CNhs12494 CNhs11371 CNhs12017 
-##    515670    515670    515670
-```
-
-```r
-barplot( log10( cbind( normalisedNumberOfPeaks
-                     , numberOfPeaks
-                     , numberOfTags) [adipocytes,]
+barplot( log10( cbind( normalisedNumberOfPeaks[adipocytes]
+                     , numberOfPeaks[adipocytes]
+                     , numberOfTags[adipocytes])
               )
        , beside=TRUE
        , legend=TRUE
