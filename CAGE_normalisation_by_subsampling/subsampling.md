@@ -1,14 +1,4 @@
----
-title: "Normalisation of CAGE data by sub-sampling"
-author:
- - "Charles Plessy"
-output: 
-  html_document: 
-    keep_md: yes
-editor_options: 
-  chunk_output_type: console
----
-
+# Normalisation of CAGE data by sub-sampling
 
 The number of different genes detected when sequencing a transcriptome library
 increases slower and slower as reads are added: by definition the first read is
