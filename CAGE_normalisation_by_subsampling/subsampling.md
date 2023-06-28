@@ -1,7 +1,14 @@
+---
+title: "Normalisation of CAGE data by sub-sampling"
+author:
+ - "Charles Plessy"
+output: 
+  html_document: 
+    keep_md: yes
+editor_options: 
+  chunk_output_type: console
+---
 
-
-Normalisation of CAGE data by sub-sampling
-==========================================
 
 The number of different genes detected when sequencing a transcriptome library
 increases slower and slower as reads are added: by definition the first read is
@@ -28,11 +35,7 @@ of the `rrarefy` command of the [vegan][] package.
 
 [vegan]: http://vegan.r-forge.r-project.org/
 
-
-<a id="depth-norm">Sub-sampling _libraries_ at the same depth</a>
------------------------------------------------------------------
-
-### Information and download
+## Information and download
 
 See the main [README](../README.md) for general recommendations on how or what
 to prepare before running this tutorial.
@@ -54,7 +57,7 @@ echo "0b288555ef51d1f1f9f04a2536d51a1d  hg19.cage_peak_phase1and2combined_counts
 ## hg19.cage_peak_phase1and2combined_counts.osc.txt.gz: OK
 ```
 
-### Data loading and preparation in R
+## Data loading and preparation in R
 
 The table is in [Order-Switchable Columns][OSC] format.  The [read.table][]
 command in R will automatically discard its comment lines, set up column names
@@ -67,7 +70,7 @@ The table is large: so loading the table will take time…
 
 
 ```r
-osc <- read.table('osc <- read.table('hg19.cage_peak_counts.osc.txt.gz', row.names=1, header=TRUE)', row.names=1, header=TRUE)
+osc <- read.table('hg19.cage_peak_phase1and2combined_counts.osc.txt.gz', row.names=1, header=TRUE)
 dim(osc)
 ```
 
@@ -99,11 +102,11 @@ summary(t(osc["01STAT:MAPPED",]))
 
 ```
 ##  01STAT:MAPPED     
-##  Min.   :    6602
-##  1st Qu.: 1787336
-##  Median : 3229346
-##  Mean   : 3808352
-##  3rd Qu.: 5254150
+##  Min.   :    6602  
+##  1st Qu.: 1787336  
+##  Median : 3229346  
+##  Mean   : 3808352  
+##  3rd Qu.: 5254150  
 ##  Max.   :16059002
 ```
 
@@ -114,10 +117,10 @@ summary(colSums(osc), digits=10)
 
 ```
 ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-##     6602  1787336  3229346  3808352  5254150 16059002 
+##     6602  1787336  3229346  3808352  5254150 16059002
 ```
 
-### Number of peaks detected and total number of tags, part 1
+## Number of peaks detected and total number of tags, part 1
 
 Let's see now how many CAGE peaks are detected per library.  The command `osc >
 0` produces a data frame containing `TRUE` where a tag count was higher than
@@ -152,7 +155,7 @@ numberOfPeaks[adipocytes]
 ```
 
 ```
-## CNhs12494 CNhs11371 CNhs12017
+## CNhs12494 CNhs11371 CNhs12017 
 ##     27728     41048     54730
 ```
 
@@ -167,8 +170,7 @@ numberOfTags[adipocytes]
 
 Do we see more peaks just because there were more tags ?
 
-
-### Sub-sampling
+## Sub-sampling
 
 Here, we will remove tags from the data until each library has the same number of tags,
 that is, we will normalise the _sequencing depth_ on the most _shallow_ library.
@@ -191,7 +193,13 @@ library(vegan)
 
 ```
 ## Loading required package: permute
+```
+
+```
 ## Loading required package: lattice
+```
+
+```
 ## This is vegan 2.6-4
 ```
 
@@ -200,8 +208,14 @@ set.seed(1)
 minNumberOfTags <- 500000
 # Let's discard the libraries that do not have enough tags.
 summary(numberOfTags > minNumberOfTags)
+```
+
+```
 ##    Mode   FALSE    TRUE 
-## logical     105    1724 
+## logical     105    1724
+```
+
+```r
 osc.sub <- t(rrarefy(t(osc[,numberOfTags > minNumberOfTags]), minNumberOfTags))
 rm(.Random.seed)
 summary(colSums(osc.sub), digits=10)
@@ -209,12 +223,12 @@ summary(colSums(osc.sub), digits=10)
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-     5e+05   5e+05   5e+05   5e+05   5e+05   5e+05
+##   5e+05   5e+05   5e+05   5e+05   5e+05   5e+05
 ```
 
 That is all !  Now all the libraries contain the same number of tags.
 
-### Number of peaks detected and total number of tags, part 2
+## Number of peaks detected and total number of tags, part 2
 
 
 ```r
@@ -227,6 +241,14 @@ normalisedNumberOfPeaks[adipocytes]
 ##     27011     28705     27507
 ```
 
+```r
+colSums(osc.sub)[adipocytes]
+```
+
+```
+## CNhs12494 CNhs11371 CNhs12017 
+##     5e+05     5e+05     5e+05
+```
 
 ```r
 barplot( log10( cbind( normalisedNumberOfPeaks[adipocytes]
@@ -246,7 +268,7 @@ barplot( log10( cbind( normalisedNumberOfPeaks[adipocytes]
 
 The number of detected peaks is now very similar between the three biological replicates !
 
-### Further uses of sub-sampling.
+## Further uses of sub-sampling.
 
 One can also use sub-sampling to compare the expression profile of CAGE peaks,
 normalising for the fact that low-expressed peaks will be found in less
@@ -257,3 +279,40 @@ _et al._, 2014][F5-paper]), on ubiquitous and tissue-restricted expression, and
 will be the topic of a future tutorial.
 
 [F5-paper]: http://dx.doi.org/10.1038/nature13182 "Forrest et al., 2014"
+
+## Session information
+
+
+```r
+sessionInfo()
+```
+
+```
+## R version 4.3.0 (2023-04-21)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Debian GNU/Linux 12 (bookworm)
+## 
+## Matrix products: default
+## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.11.0 
+## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.11.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C               LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8     LC_MONETARY=en_GB.UTF-8   
+##  [6] LC_MESSAGES=en_GB.UTF-8    LC_PAPER=en_GB.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Etc/UTC
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] vegan_2.6-4     lattice_0.20-45 permute_0.9-7  
+## 
+## loaded via a namespace (and not attached):
+##  [1] nlme_3.1-162    cli_3.6.1       knitr_1.43      rlang_1.1.1     xfun_0.39       highr_0.10      jsonlite_1.8.5  htmltools_0.5.5 sass_0.4.6     
+## [10] rmarkdown_2.22  grid_4.3.0      evaluate_0.21   jquerylib_0.1.4 MASS_7.3-58.2   fastmap_1.1.1   yaml_2.3.7      cluster_2.1.4   compiler_4.3.0 
+## [19] mgcv_1.8-41     rstudioapi_0.14 digest_0.6.31   R6_2.5.1        parallel_4.3.0  splines_4.3.0   bslib_0.5.0     Matrix_1.5-3    tools_4.3.0    
+## [28] cachem_1.0.8
+```

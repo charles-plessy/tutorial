@@ -1,10 +1,17 @@
+---
+title: "Normalisation of CAGE data by sub-sampling"
+author:
+ - "Charles Plessy"
+output: 
+  html_document: 
+    keep_md: yes
+editor_options: 
+  chunk_output_type: console
+---
 ```{r echo=FALSE}
-knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(cache=FALSE)
 options(width=150)
 ```
-
-Normalisation of CAGE data by sub-sampling
-==========================================
 
 The number of different genes detected when sequencing a transcriptome library
 increases slower and slower as reads are added: by definition the first read is
@@ -31,11 +38,7 @@ of the `rrarefy` command of the [vegan][] package.
 
 [vegan]: http://vegan.r-forge.r-project.org/
 
-
-<a id="depth-norm">Sub-sampling _libraries_ at the same depth</a>
------------------------------------------------------------------
-
-### Information and download
+## Information and download
 
 See the main [README](../README.md) for general recommendations on how or what
 to prepare before running this tutorial.
@@ -52,7 +55,7 @@ wget --quiet --timestamping https://fantom.gsc.riken.jp/5/datafiles/latest/extra
 echo "0b288555ef51d1f1f9f04a2536d51a1d  hg19.cage_peak_phase1and2combined_counts.osc.txt.gz" | md5sum -c
 ```
 
-### Data loading and preparation in R
+## Data loading and preparation in R
 
 The table is in [Order-Switchable Columns][OSC] format.  The [read.table][]
 command in R will automatically discard its comment lines, set up column names
@@ -90,7 +93,7 @@ osc['01STAT:MAPPED',] <- osc['01STAT:MAPPED',] - colSums(osc[-grep('01STAT:MAPPE
 summary(colSums(osc), digits=10)
 ```
 
-### Number of peaks detected and total number of tags, part 1
+## Number of peaks detected and total number of tags, part 1
 
 Let's see now how many CAGE peaks are detected per library.  The command `osc >
 0` produces a data frame containing `TRUE` where a tag count was higher than
@@ -120,8 +123,7 @@ numberOfTags[adipocytes]
 
 Do we see more peaks just because there were more tags ?
 
-
-### Sub-sampling
+## Sub-sampling
 
 Here, we will remove tags from the data until each library has the same number of tags,
 that is, we will normalise the _sequencing depth_ on the most _shallow_ library.
@@ -150,7 +152,7 @@ summary(colSums(osc.sub), digits=10)
 
 That is all !  Now all the libraries contain the same number of tags.
 
-### Number of peaks detected and total number of tags, part 2
+## Number of peaks detected and total number of tags, part 2
 
 ```{r peakNumberBarplot, dependson="stat_mapped", dev="svg"}
 normalisedNumberOfPeaks <- colSums(osc.sub > 0)
@@ -171,7 +173,7 @@ barplot( log10( cbind( normalisedNumberOfPeaks[adipocytes]
 
 The number of detected peaks is now very similar between the three biological replicates !
 
-### Further uses of sub-sampling.
+## Further uses of sub-sampling.
 
 One can also use sub-sampling to compare the expression profile of CAGE peaks,
 normalising for the fact that low-expressed peaks will be found in less
@@ -182,3 +184,9 @@ _et al._, 2014][F5-paper]), on ubiquitous and tissue-restricted expression, and
 will be the topic of a future tutorial.
 
 [F5-paper]: http://dx.doi.org/10.1038/nature13182 "Forrest et al., 2014"
+
+## Session information
+
+```{r}
+sessionInfo()
+```
